@@ -5,7 +5,7 @@ license: MIT
 compatibility: Requires git and a Git repository. Language-agnostic; no runtime dependencies beyond git.
 metadata:
   author: n-shadloo
-  version: "1.0.0"
+  version: "1.1.0"
 allowed-tools: Bash(git:*) Read
 ---
 
