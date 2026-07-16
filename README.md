@@ -31,7 +31,11 @@ always-on project context for any agent that reads it.
 
 ## Install
 
-The repo is a folder of plain-Markdown instruction files. Claude, Codex, and Cursor read it as a skill — `SKILL.md` plus the `references/` folder, loaded on demand. Gemini reads a single always-on file instead. Nothing to build; no dependencies beyond `git`.
+The repo is a folder of plain-Markdown instruction files. Claude reads it as an
+Agent Skill (`SKILL.md` plus the `references/` folder, loaded on demand).
+OpenAI Codex CLI and Cursor reuse the same canonical content through their
+native discovery mechanisms, while Gemini CLI reads a single `GEMINI.md`
+context file. Nothing to build; no dependencies beyond `git`.
 
 ### Claude
 
@@ -49,51 +53,53 @@ git clone https://github.com/n-shadloo/git-commit-writer.git \
   ~/.claude/skills/git-commit-writer
 ```
 
-For claude.ai or the API, upload the folder as a custom skill in settings.
+For claude.ai or the API, upload the folder as a custom skill in Settings.
 
-### Codex
+### Codex CLI
 
-Codex reads the same `SKILL.md` skill format. Copy the folder into its skills directory — the `references/` come along and load on demand.
+Codex CLI discovers Agent Skills from the `.agents/skills/` directory and reads
+`AGENTS.md` for always-on project context.
 
 One project:
 
 ```bash
 git clone https://github.com/n-shadloo/git-commit-writer.git \
-  .codex/skills/git-commit-writer
+  .agents/skills/git-commit-writer
 ```
 
 All your projects:
 
 ```bash
 git clone https://github.com/n-shadloo/git-commit-writer.git \
-  ~/.codex/skills/git-commit-writer
+  ~/.agents/skills/git-commit-writer
 ```
 
-Codex loads it automatically when a commit task matches, or invoke it explicitly with `/skills` or `$git-commit-writer`. (Some Codex versions also scan `.agents/skills/` from the working directory up to the repo root — either location works.)
-
-For always-on context instead of, or alongside, the skill, drop `AGENTS.md` in your repo root, or `~/.codex/AGENTS.md` to apply the conventions to every project.
+Codex automatically discovers the skill when appropriate. `AGENTS.md` provides
+project-wide conventions alongside the skill.
 
 ### Cursor
 
-Cursor also reads the `SKILL.md` skill format, so the same clone works:
+Cursor also supports Agent Skills, so the same clone works:
 
 ```bash
 git clone https://github.com/n-shadloo/git-commit-writer.git \
   .cursor/skills/git-commit-writer
 ```
 
-Cursor additionally reads `AGENTS.md` at the repo root and the bundled `.cursor/rules/git-commits.mdc` rule — both point at the same guidance, so having the repo checked out is enough.
+Cursor additionally reads `AGENTS.md` at the repository root and the bundled
+`.cursor/rules/git-commits.mdc` rule, which reinforces the same guidance.
 
 ### Gemini CLI
 
-Gemini doesn't read skills; it reads `GEMINI.md`.
+Gemini CLI doesn't read Agent Skills directly; it reads `GEMINI.md`.
 
-- **Per project:** copy `GEMINI.md` into the repo root.
+- **Per project:** copy `GEMINI.md` into the repository root.
 - **All projects:** copy it to `~/.gemini/GEMINI.md`.
 
-`GEMINI.md` carries the same conventions and points at `AGENTS.md` for the full detail.
+`GEMINI.md` carries the same conventions and points at `AGENTS.md` for the full
+detail.
 
-The only requirement anywhere is `git` on your path and a repository to run in.
+The only requirement is `git` on your path and a Git repository to run in.
 
 ## Use
 
