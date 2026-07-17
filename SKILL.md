@@ -1,19 +1,19 @@
 ---
-name: git-commit-writer
-description: Writes Conventional Commits messages from staged git changes. Reads the staged diff, infers what changed and why, chooses an accurate type and scope, and produces a properly structured commit — subject, body, and footer trailers — with correct breaking-change notation. Use whenever the user is about to commit, asks for a commit message, mentions writing/fixing/improving a commit, refers to their staged changes, or says things like "commit this", "what should this commit say", or "write a commit message". Also use before running git commit so the message follows the convention. Do not trigger for unrelated git work such as branching, rebasing, or resolving merge conflicts unless a commit message is being written.
+name: git-authoring
+description: Authors Conventional Commits messages and pull-request content from real git changes. By default, reads the staged diff, infers what changed and why, chooses an accurate type and scope, and produces a properly structured commit — subject, body, and footer trailers — with correct breaking-change notation. On request, it also selects which unstaged files belong together as one coherent commit before committing, and writes a complete pull-request title and description (summary, what changed, testing, breaking changes) from the branch's history and its diff against the base branch. Use whenever the user is about to commit, asks for a commit message, mentions writing/fixing/improving a commit, refers to their staged changes, asks the agent to choose which files to stage and commit, or asks for a pull-request title or description. Also use before running git commit so the message follows the convention. Do not trigger for unrelated git work such as branching, rebasing, or resolving merge conflicts unless a commit or pull request is being written.
 license: MIT
-compatibility: Requires git and a Git repository. Language-agnostic; no runtime dependencies beyond git.
+compatibility: Requires git and a Git repository. Language-agnostic; no runtime dependencies beyond git. Pull-request output is plain Markdown, so no GitHub CLI is required.
 metadata:
   author: n-shadloo
-  version: "1.1.1"
+  version: "2.0.0"
 allowed-tools: Bash(git:*) Read
 ---
 
-# Git Commit Writer
+# Git Authoring
 
-Turn staged changes into a commit message a reader will thank you for six months from now. This skill reads what is actually staged, works out the intent behind the change, and writes a Conventional Commits message with an accurate type, a well-chosen scope, an imperative subject, and — when the change warrants it — a body that explains *why* and footer trailers that carry metadata.
+Turn real git changes into history a reader will thank you for six months from now. By default this skill reads what is actually staged, works out the intent behind the change, and writes a Conventional Commits message with an accurate type, a well-chosen scope, an imperative subject, and — when the change warrants it — a body that explains *why* and footer trailers that carry metadata. When asked, it also chooses which unstaged files belong together as one coherent commit, and it writes complete pull-request content from what changed on the branch.
 
-The point is not a message that merely passes a linter. Getting the shape right (`type(scope): subject`) is the easy part, and this skill treats it as table stakes. The value is in choosing the right type, writing a subject that says what changed, and using the body to record the reasoning the diff itself can't show.
+The point is not output that merely passes a linter. Getting the shape right (`type(scope): subject`) is the easy part, and this skill treats it as table stakes. The value is in choosing the right type, writing a subject that says what changed, using the body to record the reasoning the diff itself can't show, and — for a pull request — giving a reviewer a title and description they can act on.
 
 ## What this skill does
 
@@ -22,12 +22,21 @@ The point is not a message that merely passes a linter. Getting the shape right 
 - Writes an imperative **subject** within length limits, a **body** that explains motivation and trade-offs when they aren't obvious, and **footer trailers** (issue links, co-authors, breaking-change notes).
 - Flags **breaking changes** and notates them correctly (`!` and/or a `BREAKING CHANGE:` footer).
 - Decides when staged changes should be **split into several commits**, and proposes the split.
+- On request, **chooses which unstaged files** belong together as one coherent commit, and stages that set.
+- On request, writes a complete **pull-request title and description** — summary, what changed, testing, breaking changes — from the branch's history and its diff against the base branch.
 - Matches the repository's **existing convention** when it differs from Conventional Commits.
-- Commits the message when asked — never before.
+- Commits, stages, and opens pull requests **only when asked**, and never attributes the work to an AI.
+
+## Ground rules
+
+Two guarantees hold across everything below.
+
+- **Never mutate git on your own.** The only git you run unprompted is the read-only inspection in step 1. Staging (`git add`), committing (`git commit`), pushing (`git push`), and opening a pull request are *proposed* as exact commands and run only after the user explicitly confirms.
+- **Never add AI attribution.** Commits and pull requests read as the developer's own work. Never add an AI co-author, a `Co-authored-by` for the agent, a "Generated by"/"written with" line, or an AI author or committer identity — nothing that would place an AI in the repository's history, contributors, or authorship. Add attribution of any kind only if the user explicitly asks for it.
 
 ## Workflow
 
-Work through these in order. For a small, single-purpose change this file is enough on its own; reach for a reference file only when a step points to one.
+This is the default path: writing a commit for what is already staged. Work through the steps in order; for a small, single-purpose change this file is enough on its own, so reach for a reference file only when a step points to one. Two capabilities activate **only when the user asks** — choosing which files to stage, and writing a pull request — and each has its own section after this workflow.
 
 ### 1. Gather context
 
@@ -45,7 +54,7 @@ git log --oneline -15
 - `git log --oneline -15` reveals the repo's prevailing style so you can match it (step 4).
 - If `git rev-parse -q --verify MERGE_HEAD` succeeds, a merge is in progress — see `references/conventional-commits.md` for merge and revert handling.
 
-**If nothing is staged**, say so plainly and stop. Do not run `git add -A` to conjure something to commit — staging everything silently bundles unrelated work into one commit, which is exactly what good history avoids. Show the unstaged changes (`git status --short`) and ask what should go into this commit.
+**If nothing is staged**, say so plainly and stop. Do not run `git add -A` to conjure something to commit — staging everything silently bundles unrelated work into one commit, which is exactly what good history avoids. Show the unstaged changes (`git status --short`) and ask what should go into this commit. (If the user has asked you to choose what to stage, follow "Choosing which files to stage" below instead.)
 
 ### 2. Understand the change
 
@@ -73,7 +82,7 @@ Build it in this order. See "The format" below for the rules, `references/craft.
 2. **Scope** — the affected area, if a clear one exists (`references/scopes-and-repos.md`).
 3. **Subject** — imperative, concise, honest.
 4. **Body** — only if it adds something the diff doesn't: the *why*, trade-offs, alternatives considered, side effects. Skip it for self-evident changes.
-5. **Footers** — issue links (`Closes #123`), co-authors, `BREAKING CHANGE:` when applicable.
+5. **Footers** — issue links (`Closes #123`), genuine co-authors, `BREAKING CHANGE:` when applicable.
 
 ### 6. Self-check
 
@@ -84,7 +93,7 @@ Before presenting, confirm:
 - Subject ≤ 50 characters if reasonable, ≤ 72 hard; no trailing period.
 - A body exists if — and only if — the change needs explaining, and it says *why*, not *how*.
 - Breaking changes are notated (`!` and/or a `BREAKING CHANGE:` footer).
-- Trailers are well-formed (`references/conventional-commits.md`).
+- Trailers are well-formed (`references/conventional-commits.md`) and true — no AI attribution.
 - Nothing is invented — every claim is backed by the diff.
 
 ### 7. Present, and commit only when asked
@@ -102,6 +111,35 @@ COMMIT_MSG
 ```
 
 The quoted heredoc delimiter (`'COMMIT_MSG'`) stops the shell from expanding backticks or `$` inside the message. For a subject-only commit, `git commit -m "type(scope): subject"` is fine.
+
+## Choosing which files to stage (only when asked)
+
+This runs **only when the user asks the agent to pick what to stage** — "choose the files that belong together and commit", "stage the right files and commit this", and the like. When the user hasn't asked, the default is unchanged: if nothing is staged, say so and stop (step 1).
+
+1. **Inspect the unstaged work.** Read the real changes, not filenames: `git status --short`, `git diff --stat`, and `git diff` (add `git diff --staged` if some things are already staged).
+2. **Group by intent, then select one coherent set.** Choose the files — or, when a file mixes concerns, the hunks — that form a single self-contained change, the way a careful developer would group them: related changes only. Do **not** stage everything at once, and do **not** stage an arbitrary mix. If the working tree holds several unrelated changes, pick the single most coherent group to commit first and name the remaining groups as the next commits, rather than bundling them.
+3. **Propose the exact staging, then the commit.** Give `git add <specific paths>` for the chosen set (or `git add -p <path>` when one file needs splitting), then compose the message with the normal discipline (steps 4–6) and present it.
+4. **Stage and commit only after the user confirms.** Never run `git add` or `git commit` on your own.
+
+A worked selection is in `references/examples.md`.
+
+## Pull requests (only when asked)
+
+This runs **only when the user asks for pull-request help** — "write a PR title and description", "draft the PR for this branch", and the like. It never fires as part of a commit request. `references/pull-requests.md` carries the full guidance; the essentials:
+
+1. **Find the base branch automatically.** Prefer `git symbolic-ref refs/remotes/origin/HEAD` (strip to the branch name); if that isn't set, fall back to whichever of `origin/main` or `origin/master` exists, then to local `main`/`master`. State the base you settled on.
+2. **Read what the branch actually did** against that base (all read-only):
+
+   ```bash
+   git log <base>..HEAD --oneline
+   git diff <base>...HEAD --stat
+   git diff <base>...HEAD
+   ```
+
+   The three-dot `<base>...HEAD` diffs from the merge base, so it shows only this branch's work.
+3. **Write the PR as plain Markdown** — a strong, specific title, then a description with **Summary** (why this branch exists), **What changed** (the substantive changes grouped by intent, not a file dump), **Testing** (how it was verified — from tests in the diff, CI, or manual steps; say what you could and couldn't confirm), and **Breaking changes** (spell out any contract change and its migration, or state "None"). Add a short reviewer/testing checklist when it earns its place. Tailor the emphasis to the PR's type (feature, fix, refactor, docs, breaking).
+4. **Ground every claim in the history and diff.** Don't assert tests passed if the branch adds none — say testing is unverified instead. Verify as thoroughly as the branch allows.
+5. **Never open the PR yourself.** Output the Markdown for the user to paste, or offer the exact command for them to run — for example `gh pr create --base <base> --title "…" --body-file <file>` — and leave running it to them.
 
 ## The format
 
@@ -131,6 +169,7 @@ The quoted heredoc delimiter (`'COMMIT_MSG'`) stops the shell from expanding bac
 - One blank line after the body. Each is `Token: value` (or `Token #value`), tokens using `-` for spaces: `Reviewed-by`, `Co-authored-by`, `Refs`.
 - Issue links: `Closes #123` / `Fixes #123` (GitHub closes the issue on merge to the default branch) or `Refs #123` (reference only).
 - Breaking change: `BREAKING CHANGE: <what breaks and the migration>` (uppercase, exactly).
+- Only add trailers that are true, and never an AI co-author or attribution unless the user explicitly asks.
 
 ## Types (quick reference)
 
@@ -187,13 +226,14 @@ Closes #482
 chore(deps): bump djangorestframework to 3.15.2
 ```
 
-For a fuller gallery — breaking changes, multi-paragraph bodies, co-authored commits, and worked splits — see `references/examples.md`.
+For a fuller gallery — breaking changes, multi-paragraph bodies, co-authored commits, worked splits, and a file-selection walkthrough — see `references/examples.md`.
 
 ## Reference files
 
 Read these on demand; don't load them for routine commits.
 
 - **`references/conventional-commits.md`** — the full grammar, complete type taxonomy with SemVer impact, breaking-change rules, the footer/trailer catalog, and revert/merge handling. Read when unsure about a type, breaking-change formatting, or trailer syntax.
-- **`references/examples.md`** — an annotated gallery of exemplary commits, including breaking changes, rationale-heavy bodies, trailers, and worked splits. Read when composing a non-trivial message or a split.
+- **`references/examples.md`** — an annotated gallery of exemplary commits, including breaking changes, rationale-heavy bodies, trailers, worked splits, and a file-selection walkthrough. Read when composing a non-trivial message, a split, or a staging selection.
 - **`references/craft.md`** — how to write a subject and body that communicate, the *why*-not-*how* principle, and a catalogue of common bad commits with fixes. Read when lifting a mechanical message.
 - **`references/scopes-and-repos.md`** — choosing a scope (with backend/Django/DRF and other ecosystem cues), and detecting and matching a repository's existing convention. Read when picking a scope or entering an unfamiliar repo.
+- **`references/pull-requests.md`** — base-branch detection, gathering the branch's history and diff, and writing a PR title and a structured description (summary, changes, testing, breaking changes) with type-aware emphasis and a reviewer checklist. Read when writing pull-request content.
