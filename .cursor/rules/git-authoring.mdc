@@ -1,0 +1,24 @@
+---
+description: Conventional Commit and pull-request conventions for this repository
+alwaysApply: true
+---
+
+When writing a git commit message or a pull request, follow `AGENTS.md` at the
+repository root.
+
+- Read `git diff --staged` — the staged diff is the source of truth, not filenames.
+- Choose an accurate Conventional Commit type and scope; write an imperative subject
+  (≤ 50 chars ideally, 72 hard; no trailing period).
+- Add a body only when it explains *why* the change was made, not *how*.
+- Notate breaking changes with `!` and/or a `BREAKING CHANGE:` footer.
+- Add trailers when relevant and true: `Closes #123`, `Co-authored-by:`, `Signed-off-by:`.
+- If nothing is staged, say so and stop — never `git add -A`. If asked to choose what to
+  stage, select only the files that form one coherent commit, not everything at once.
+- For a pull request (only when asked), detect the base branch (main/master), read the
+  branch's diff against it, and write a title plus a description with summary, what
+  changed, testing, and breaking changes, as plain Markdown.
+- Never mutate git on your own: propose the exact `git add` / `git commit` / PR commands
+  and run them only when explicitly asked; commit the staged set as-is.
+- Never add AI attribution to a commit or PR unless the user explicitly asks.
+
+See `AGENTS.md` for the complete workflow, type taxonomy, and examples.
