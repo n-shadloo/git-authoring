@@ -10,6 +10,7 @@ A gallery of commits worth imitating, each with the situation that produced it a
 - Trailers and attribution
 - Backend / API-contract changes
 - Splitting a diff into several commits
+- Choosing which files to stage
 
 ## Single-line commits
 
@@ -148,3 +149,23 @@ git commit -m "build(deps): bump djangorestframework to 3.15.2"
 Each commit is now a single, revertible, reviewable idea, and the history reads as a sequence of decisions rather than one undifferentiated "update".
 
 If one file holds two unrelated changes, stage selectively with `git add -p` and commit the hunks separately.
+
+## Choosing which files to stage
+
+When the user asks the agent to *pick* what to stage — rather than committing what's already staged — the same grouping judgment applies, but you start from an empty index and select the one coherent set yourself. The rule is: related changes only, not everything, not an arbitrary mix.
+
+Situation: the user says "choose the files that belong together and commit them." `git status --short` shows a mix — a fix to the auth serializer with its test, an unrelated new endpoint, and a stray formatting change in a settings file. The auth fix and its test are the tightest, most coherent unit, so stage exactly those and commit them first:
+
+```bash
+# Chosen set: the null-profile fix and the test that covers it — nothing else.
+git add users/serializers.py users/tests/test_serializers.py
+git commit -m "fix(serializers): handle null profile in user payload"
+```
+
+Then say what was deliberately left out and why, so the user can decide what comes next:
+
+> Staged and committed the null-profile fix with its test. Left unstaged: the new
+> `transactions` endpoint (a separate `feat`) and a formatting-only change in
+> `settings.py` (a `style` commit, or drop it). Want either of those next?
+
+The point is the *selection*: you didn't `git add -A`, and you didn't fold three unrelated concerns into one commit. You picked the set a careful developer would, proposed it, and — as always — staged and committed only once the user was on board.
