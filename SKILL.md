@@ -5,7 +5,7 @@ license: MIT
 compatibility: Requires git and a Git repository. Language-agnostic; no runtime dependencies beyond git. Pull-request output is plain Markdown, so no GitHub CLI is required.
 metadata:
   author: n-shadloo
-  version: "2.0.1"
+  version: "2.1.0"
 allowed-tools: Bash(git:*) Read
 ---
 
