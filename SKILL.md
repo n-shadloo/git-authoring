@@ -1,17 +1,17 @@
 ---
 name: git-authoring
-description: Authors Conventional Commits messages and pull-request content from real git changes. By default, reads the staged diff, infers what changed and why, chooses an accurate type and scope, and produces a properly structured commit — subject, body, and footer trailers — with correct breaking-change notation. On request, it also selects which unstaged files belong together as one coherent commit before committing, and writes a complete pull-request title and description (summary, what changed, testing, breaking changes) from the branch's history and its diff against the base branch. Use whenever the user is about to commit, asks for a commit message, mentions writing/fixing/improving a commit, refers to their staged changes, asks the agent to choose which files to stage and commit, or asks for a pull-request title or description. Also use before running git commit so the message follows the convention. Do not trigger for unrelated git work such as branching, rebasing, or resolving merge conflicts unless a commit or pull request is being written.
+description: Authors Conventional Commits messages and pull-request content from real git changes, or carries out a complete stage-commit-push workflow when explicitly told to do it all. Supports four request-selected modes: write an exact commit command for already-staged changes; choose one coherent set of unstaged files and present staging plus commit commands; write a pull-request title and structured Markdown description from the branch diff; or, only on an unmistakable autonomous request, stage, commit, and push the work itself. Use whenever the user is about to commit, asks for a commit message or commit command, mentions writing/fixing/improving a commit, refers to staged changes, asks which files belong in a commit, asks for a pull-request title or description, or explicitly asks the agent to stage, commit, and push. Do not trigger for unrelated git work such as branching, rebasing, or resolving merge conflicts unless a commit or pull request is being written.
 license: MIT
 compatibility: Requires git and a Git repository. Language-agnostic; no runtime dependencies beyond git. Pull-request output is plain Markdown, so no GitHub CLI is required.
 metadata:
   author: n-shadloo
-  version: "2.0.0"
+  version: "2.0.1"
 allowed-tools: Bash(git:*) Read
 ---
 
 # Git Authoring
 
-Turn real git changes into history a reader will thank you for six months from now. By default this skill reads what is actually staged, works out the intent behind the change, and writes a Conventional Commits message with an accurate type, a well-chosen scope, an imperative subject, and — when the change warrants it — a body that explains *why* and footer trailers that carry metadata. When asked, it also chooses which unstaged files belong together as one coherent commit, and it writes complete pull-request content from what changed on the branch.
+Turn real git changes into history a reader will thank you for six months from now. By default this skill reads what is actually staged, works out the intent behind the change, and presents an exact commit command with a Conventional Commits message: an accurate type, a well-chosen scope, an imperative subject, and — when the change warrants it — a body that explains *why* and footer trailers that carry metadata. On request, it can instead choose one coherent set of files and present staging plus commit commands, write complete pull-request content, or carry out staging, committing, and pushing itself.
 
 The point is not output that merely passes a linter. Getting the shape right (`type(scope): subject`) is the easy part, and this skill treats it as table stakes. The value is in choosing the right type, writing a subject that says what changed, using the body to record the reasoning the diff itself can't show, and — for a pull request — giving a reviewer a title and description they can act on.
 
@@ -22,21 +22,35 @@ The point is not output that merely passes a linter. Getting the shape right (`t
 - Writes an imperative **subject** within length limits, a **body** that explains motivation and trade-offs when they aren't obvious, and **footer trailers** (issue links, co-authors, breaking-change notes).
 - Flags **breaking changes** and notates them correctly (`!` and/or a `BREAKING CHANGE:` footer).
 - Decides when staged changes should be **split into several commits**, and proposes the split.
-- On request, **chooses which unstaged files** belong together as one coherent commit, and stages that set.
+- On request, **chooses which unstaged files** belong together as one coherent commit, then presents exact staging and commit commands.
 - On request, writes a complete **pull-request title and description** — summary, what changed, testing, breaking changes — from the branch's history and its diff against the base branch.
 - Matches the repository's **existing convention** when it differs from Conventional Commits.
-- Commits, stages, and opens pull requests **only when asked**, and never attributes the work to an AI.
+- Keeps commit-message, file-selection, and pull-request modes **read-only**: it presents commands or Markdown and leaves execution to the user.
+- On an explicit autonomous request only, **stages, commits, and pushes** the selected work end to end.
+
+## Choose the mode
+
+Choose exactly one mode from the user's request. Do not blend their execution rules.
+
+1. **Commit command for already-staged changes (default).** Inspect the staged diff, write the message, and present the exact heredoc `git commit` command for the user to run.
+2. **Choose files, then provide commands (on request).** Inspect staged and unstaged work, select one coherent set, and present the exact `git add` command(s) followed by the heredoc commit command for the user to run.
+3. **Pull-request title and description (on request).** Inspect the branch against its base and produce the title plus structured Markdown description. Do not stage, commit, push, or open the PR.
+4. **Autonomous stage, commit, and push (explicit request only).** Run the complete workflow yourself only when the user unmistakably asks you to carry out the git operations — for example, "stage, commit, and push this for me" or "do it all yourself."
+
+A request for a message, commands, file selection, or PR content selects modes 1–3. A bare "commit this," "go ahead," or confirmation after you present commands does **not** silently switch to mode 4. If execution intent is ambiguous, stay read-only and ask for an explicit autonomous request before mutating git.
 
 ## Ground rules
 
-Two guarantees hold across everything below.
+The mode boundary is a hard guarantee.
 
-- **Never mutate git on your own.** The only git you run unprompted is the read-only inspection in step 1. Staging (`git add`), committing (`git commit`), pushing (`git push`), and opening a pull request are *proposed* as exact commands and run only after the user explicitly confirms.
-- **Never add AI attribution.** Commits and pull requests read as the developer's own work. Never add an AI co-author, a `Co-authored-by` for the agent, a "Generated by"/"written with" line, or an AI author or committer identity — nothing that would place an AI in the repository's history, contributors, or authorship. Add attribution of any kind only if the user explicitly asks for it.
+- **Modes 1–3 never mutate git.** Run only read-only inspection. Never stage, commit, push, or open a pull request in these modes, even after a follow-up confirmation. Present exact commands for the user to run.
+- **Modes 1–3 never add AI attribution.** Commits and pull requests read as the developer's own work. Never add an AI co-author, a `Co-authored-by` for the agent, a "Generated by"/"written with" line, or an AI author or committer identity.
+- **Mode 4 is the sole execution exception.** Once explicitly selected, it may stage, commit, and push. AI attribution is permitted in this mode but not required; never invent a human co-author, reviewer, sign-off, or other trailer.
+- **Never infer mode 4.** Do not treat ordinary commit wording or approval of proposed commands as permission to execute. The user must clearly ask the agent to perform the operations itself.
 
 ## Workflow
 
-This is the default path: writing a commit for what is already staged. Work through the steps in order; for a small, single-purpose change this file is enough on its own, so reach for a reference file only when a step points to one. Two capabilities activate **only when the user asks** — choosing which files to stage, and writing a pull request — and each has its own section after this workflow.
+This is mode 1, the default path: writing a commit command for what is already staged. Work through the steps in order; for a small, single-purpose change this file is enough on its own, so reach for a reference file only when a step points to one. The other three modes activate only when the user asks for them and each has its own section after this workflow.
 
 ### 1. Gather context
 
@@ -96,9 +110,9 @@ Before presenting, confirm:
 - Trailers are well-formed (`references/conventional-commits.md`) and true — no AI attribution.
 - Nothing is invented — every claim is backed by the diff.
 
-### 7. Present, and commit only when asked
+### 7. Present the exact commit command
 
-Show the message. Commit only on an explicit request ("commit it", "go ahead"). When committing, commit the **staged** set as-is; never re-stage silently. Use a method that preserves the multi-line message exactly:
+Present the exact command for the user to run. Do not execute it. The command commits the **staged** set as-is; never add a staging command silently in mode 1. Always use the quoted-heredoc form, including for a subject-only message, so every emitted commit command has one consistent, expansion-safe shape:
 
 ```bash
 git commit -F - <<'COMMIT_MSG'
@@ -110,20 +124,20 @@ Closes #123
 COMMIT_MSG
 ```
 
-The quoted heredoc delimiter (`'COMMIT_MSG'`) stops the shell from expanding backticks or `$` inside the message. For a subject-only commit, `git commit -m "type(scope): subject"` is fine.
+The quoted heredoc delimiter (`'COMMIT_MSG'`) stops the shell from expanding backticks or `$` inside the message.
 
-## Choosing which files to stage (only when asked)
+## Mode 2: Choose which files to stage (only when asked)
 
-This runs **only when the user asks the agent to pick what to stage** — "choose the files that belong together and commit", "stage the right files and commit this", and the like. When the user hasn't asked, the default is unchanged: if nothing is staged, say so and stop (step 1).
+This runs **only when the user asks the agent to pick what belongs in one commit** — "choose the files that belong together and give me the commands," "prepare staging and commit commands for the right files," and the like. When the user hasn't asked, the default is unchanged: if nothing is staged, say so and stop (step 1).
 
 1. **Inspect the unstaged work.** Read the real changes, not filenames: `git status --short`, `git diff --stat`, and `git diff` (add `git diff --staged` if some things are already staged).
 2. **Group by intent, then select one coherent set.** Choose the files — or, when a file mixes concerns, the hunks — that form a single self-contained change, the way a careful developer would group them: related changes only. Do **not** stage everything at once, and do **not** stage an arbitrary mix. If the working tree holds several unrelated changes, pick the single most coherent group to commit first and name the remaining groups as the next commits, rather than bundling them.
-3. **Propose the exact staging, then the commit.** Give `git add <specific paths>` for the chosen set (or `git add -p <path>` when one file needs splitting), then compose the message with the normal discipline (steps 4–6) and present it.
-4. **Stage and commit only after the user confirms.** Never run `git add` or `git commit` on your own.
+3. **Present the exact staging, then the commit.** Give `git add <specific paths>` for the chosen set (or `git add -p <path>` when one file needs splitting), then compose the message with the normal discipline (steps 4–6) and present the quoted-heredoc commit command.
+4. **Leave execution to the user.** Never run `git add`, `git commit`, or `git push` in mode 2, including after the user confirms the proposed grouping.
 
 A worked selection is in `references/examples.md`.
 
-## Pull requests (only when asked)
+## Mode 3: Pull requests (only when asked)
 
 This runs **only when the user asks for pull-request help** — "write a PR title and description", "draft the PR for this branch", and the like. It never fires as part of a commit request. `references/pull-requests.md` carries the full guidance; the essentials:
 
@@ -139,7 +153,32 @@ This runs **only when the user asks for pull-request help** — "write a PR titl
    The three-dot `<base>...HEAD` diffs from the merge base, so it shows only this branch's work.
 3. **Write the PR as plain Markdown** — a strong, specific title, then a description with **Summary** (why this branch exists), **What changed** (the substantive changes grouped by intent, not a file dump), **Testing** (how it was verified — from tests in the diff, CI, or manual steps; say what you could and couldn't confirm), and **Breaking changes** (spell out any contract change and its migration, or state "None"). Add a short reviewer/testing checklist when it earns its place. Tailor the emphasis to the PR's type (feature, fix, refactor, docs, breaking).
 4. **Ground every claim in the history and diff.** Don't assert tests passed if the branch adds none — say testing is unverified instead. Verify as thoroughly as the branch allows.
-5. **Never open the PR yourself.** Output the Markdown for the user to paste, or offer the exact command for them to run — for example `gh pr create --base <base> --title "…" --body-file <file>` — and leave running it to them.
+5. **Never open the PR yourself.** Output the Markdown for the user to paste, or offer the exact command for them to run — for example `gh pr create --base <base> --title "…" --body-file <file>` — and leave running it to them. A follow-up "go ahead" does not change mode 3 into an execution mode.
+
+## Mode 4: Autonomous stage, commit, and push
+
+Enter this mode only when the user explicitly asks the agent to perform the complete operation itself. This is a deliberate exception to the read-only rules above; never activate it from a request that merely asks for a message, commands, file selection, or PR content.
+
+1. **Inspect before mutating.** Read the current branch, status, staged and unstaged diffs, recent history, remotes, and upstream. Use the staged and unstaged hunks — not filenames alone — to understand the work. Check which commits, if any, are already ahead of the upstream because a normal push will publish them too.
+2. **Select one coherent commit.** Preserve intentional staged work. Add only specific related paths or hunks needed to complete that commit; never use `git add -A` or sweep unrelated changes into it. If existing staged changes conflict with a coherent grouping, or a path requires hunk selection that cannot be performed reliably, stop and ask one focused question rather than rewriting the user's index blindly.
+3. **Stage and verify.** Run the specific `git add <paths>` commands (or carefully use `git add -p` when interactive selection is available), then reread `git diff --staged --stat` and `git diff --staged`. Do not commit until the staged diff is the intended single change.
+4. **Commit with the quoted heredoc.** Compose and execute the message using exactly this form, even for a subject-only commit:
+
+   ```bash
+   git commit -F - <<'COMMIT_MSG'
+   type(scope): subject
+
+   Optional body explaining why.
+
+   Optional-Trailer: value
+   COMMIT_MSG
+   ```
+
+   Do not bypass hooks, rewrite an existing commit, or amend unless the user explicitly requested that separate action.
+5. **Push safely.** Push the current branch normally to its configured upstream. If no upstream exists and `origin` is the unambiguous intended remote, use `git push -u origin HEAD`. Never force-push. If the remote or destination is ambiguous, or the push is rejected, stop and report the exact state instead of guessing or rewriting history.
+6. **Report the result.** State the committed SHA and subject, the pushed branch and remote, and any work intentionally left unstaged. If staging or committing succeeds but pushing fails, say so plainly and do not claim completion.
+
+AI attribution is allowed only in this explicitly selected mode. It is optional, not automatic; add it only when appropriate to the user's stated preference or the operating environment. All other trailers must still be true.
 
 ## The format
 
@@ -169,7 +208,7 @@ This runs **only when the user asks for pull-request help** — "write a PR titl
 - One blank line after the body. Each is `Token: value` (or `Token #value`), tokens using `-` for spaces: `Reviewed-by`, `Co-authored-by`, `Refs`.
 - Issue links: `Closes #123` / `Fixes #123` (GitHub closes the issue on merge to the default branch) or `Refs #123` (reference only).
 - Breaking change: `BREAKING CHANGE: <what breaks and the migration>` (uppercase, exactly).
-- Only add trailers that are true, and never an AI co-author or attribution unless the user explicitly asks.
+- Only add trailers that are true. In modes 1–3, never add AI attribution. In mode 4, AI attribution is permitted but optional.
 
 ## Types (quick reference)
 

@@ -135,15 +135,21 @@ Situation: the working tree holds a bug fix in the auth serializer, an unrelated
 ```bash
 # 1. The bug fix, on its own
 git add users/serializers.py users/tests/test_serializers.py
-git commit -m "fix(serializers): handle null profile in user payload"
+git commit -F - <<'COMMIT_MSG'
+fix(serializers): handle null profile in user payload
+COMMIT_MSG
 
 # 2. The new endpoint
 git add api/urls.py api/views.py api/tests/test_transactions.py
-git commit -m "feat(api): add transactions list endpoint"
+git commit -F - <<'COMMIT_MSG'
+feat(api): add transactions list endpoint
+COMMIT_MSG
 
 # 3. The dependency bump
 git add pyproject.toml poetry.lock
-git commit -m "build(deps): bump djangorestframework to 3.15.2"
+git commit -F - <<'COMMIT_MSG'
+build(deps): bump djangorestframework to 3.15.2
+COMMIT_MSG
 ```
 
 Each commit is now a single, revertible, reviewable idea, and the history reads as a sequence of decisions rather than one undifferentiated "update".
@@ -152,20 +158,23 @@ If one file holds two unrelated changes, stage selectively with `git add -p` and
 
 ## Choosing which files to stage
 
-When the user asks the agent to *pick* what to stage — rather than committing what's already staged — the same grouping judgment applies, but you start from an empty index and select the one coherent set yourself. The rule is: related changes only, not everything, not an arbitrary mix.
+When the user asks the agent to *pick* what belongs in one commit — rather than writing a command for what's already staged — the same grouping judgment applies, but you inspect the unstaged work and select one coherent set. The rule is: related changes only, not everything, not an arbitrary mix. In mode 2, present the commands; the user runs them.
 
-Situation: the user says "choose the files that belong together and commit them." `git status --short` shows a mix — a fix to the auth serializer with its test, an unrelated new endpoint, and a stray formatting change in a settings file. The auth fix and its test are the tightest, most coherent unit, so stage exactly those and commit them first:
+Situation: the user says "choose the files that belong together and give me the commands." `git status --short` shows a mix — a fix to the auth serializer with its test, an unrelated new endpoint, and a stray formatting change in a settings file. The auth fix and its test are the tightest, most coherent unit, so present exactly this sequence:
 
 ```bash
 # Chosen set: the null-profile fix and the test that covers it — nothing else.
 git add users/serializers.py users/tests/test_serializers.py
-git commit -m "fix(serializers): handle null profile in user payload"
+git commit -F - <<'COMMIT_MSG'
+fix(serializers): handle null profile in user payload
+COMMIT_MSG
 ```
 
 Then say what was deliberately left out and why, so the user can decide what comes next:
 
-> Staged and committed the null-profile fix with its test. Left unstaged: the new
+> The commands above stage and commit the null-profile fix with its test. They leave
+> unstaged: the new
 > `transactions` endpoint (a separate `feat`) and a formatting-only change in
-> `settings.py` (a `style` commit, or drop it). Want either of those next?
+> `settings.py` (a `style` commit, or drop it).
 
-The point is the *selection*: you didn't `git add -A`, and you didn't fold three unrelated concerns into one commit. You picked the set a careful developer would, proposed it, and — as always — staged and committed only once the user was on board.
+The point is the *selection*: you didn't suggest `git add -A`, and you didn't fold three unrelated concerns into one commit. You picked the set a careful developer would and left execution to the user. Only an explicit mode-4 request lets the agent run staging, committing, and pushing itself.

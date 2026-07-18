@@ -97,7 +97,7 @@ Attribution (recognised by GitHub and GitLab; co-authors appear in the contribut
 
 Sign-off
 
-- `Signed-off-by: Full Name <email>` — a Developer Certificate of Origin sign-off, required by projects such as the Linux kernel. Add it with `git commit -s`.
+- `Signed-off-by: Full Name <email>` — a Developer Certificate of Origin sign-off, required by projects such as the Linux kernel. Add `-s` to the quoted-heredoc commit command: `git commit -s -F - <<'COMMIT_MSG'`.
 
 Breaking change
 

@@ -1,6 +1,6 @@
 # git-authoring
 
-A commit- and pull-request authoring skill for AI coding agents — built for Claude, and portable to Codex, Cursor, and Gemini CLI. By default it reads the staged diff, works out what the change is and why it was made, and produces a properly structured commit — type, scope, subject, and, when the change needs it, a body and footer trailers. When you ask, it also picks which unstaged files belong together as one coherent commit, and writes a complete pull-request title and description from what changed on the branch.
+A commit- and pull-request authoring skill for AI coding agents — built for Claude, and portable to Codex, Cursor, and Gemini CLI. It has four request-selected modes: generate an exact commit command for staged changes; choose one coherent set of files and generate staging plus commit commands; write a pull-request title and description; or, only when explicitly told to do it all, stage, commit, and push autonomously.
 
 ## Why
 
@@ -16,9 +16,10 @@ It defaults to Conventional Commits (imperative subject, `type(scope): …`, bre
 - Notates breaking changes with `!` and a `BREAKING CHANGE:` footer.
 - Adds trailers: `Closes #123`, `Co-authored-by:`, `Signed-off-by:`, and the rest.
 - Tells you when staged changes should be split into separate commits, and gives you the commands to do it.
-- On request, chooses which unstaged files belong together as one coherent commit before committing.
+- On request, chooses which unstaged files belong together as one coherent commit and gives you the exact staging and commit commands.
 - On request, writes a complete pull-request title and description — summary, what changed, testing, breaking changes — from the branch's diff against its base.
-- Never adds AI attribution, and never stages, commits, or opens a PR without your go-ahead — never by staging things you didn't stage.
+- Keeps the first three modes read-only: it never stages, commits, pushes, or opens a PR, and never adds AI attribution.
+- Runs staging, committing, and pushing itself only when you explicitly ask for the autonomous mode.
 
 ## Works with
 
@@ -105,9 +106,9 @@ The only requirement is `git` on your path and a Git repository to run in.
 
 ## Use
 
-The skill has one default and two on-request modes.
+The skill has one default and three on-request modes. The first three are read-only: the agent inspects git and gives you commands or Markdown, but you run any operation yourself. Only the fourth mode lets the agent mutate git.
 
-### Write a commit for staged changes — the default
+### 1. Get a commit command for staged changes — the default
 
 Stage what you want to commit, then ask — or just tell the agent you're about to commit:
 
@@ -115,34 +116,42 @@ Stage what you want to commit, then ask — or just tell the agent you're about 
 > write a commit message for my staged changes
 ```
 
-A worked example:
+It reads the staged diff and returns the exact command for you to run:
 
-```
-$ git add users/serializers.py users/tests/test_serializers.py
-> commit this
-
+```bash
+git commit -F - <<'COMMIT_MSG'
 fix(serializers): handle null profile in user payload
 
-A user without a profile row raised AttributeError during
-serialization. Return an empty profile object so the endpoint responds
-200 with nulls instead of 500.
+A user without a profile row raised AttributeError during serialization.
+Return an empty profile object so the endpoint responds 200 with nulls
+instead of 500.
 
 Closes #517
+COMMIT_MSG
 ```
 
-If the staged changes turn out to cover more than one thing, it says so and hands you a sequence of `git add` / `git commit` commands to split them instead of writing one muddled message. It commits only when you ask, and only the set you staged.
+If the staged changes cover more than one thing, it says so and hands you a sequence of specific staging and heredoc commit commands to split them instead of writing one muddled message. It never runs those commands for you in this mode.
 
-### Ask it to choose which files to stage, then commit — on request
+### 2. Ask it to choose files and prepare the commands — on request
 
 When you have a pile of unstaged work and want the agent to decide what belongs together, ask for it explicitly:
 
 ```
-> choose the files that belong in one commit and commit them
+> choose the files that belong in one commit and give me the commands
 ```
 
-It reads the unstaged changes and selects the files that form one coherent change — related work only, not everything, not an arbitrary mix — then proposes the exact `git add …` plus the commit. If several unrelated changes are in flight, it stages the most coherent group first and points out the rest. Nothing is staged or committed until you confirm.
+It reads the staged and unstaged changes, selects the files that form one coherent change — related work only, not everything, not an arbitrary mix — and returns commands like these:
 
-### Ask for a pull-request title and description — on request
+```bash
+git add users/serializers.py users/tests/test_serializers.py
+git commit -F - <<'COMMIT_MSG'
+fix(serializers): handle null profile in user payload
+COMMIT_MSG
+```
+
+If several unrelated changes are in flight, it selects the strongest coherent group and points out what it deliberately left out. You run both commands; the agent never stages or commits in this mode.
+
+### 3. Ask for a pull-request title and description — on request
 
 When the branch is ready to open, ask for PR content explicitly:
 
@@ -152,9 +161,21 @@ When the branch is ready to open, ask for PR content explicitly:
 
 It detects the base branch (main/master), reads the branch's commits and its diff against that base, and writes a complete PR as plain Markdown: a strong title and a description with a summary, what changed, testing, and any breaking changes — plus a reviewer/testing checklist where it helps. It verifies what it can from the history and diff, and never opens the PR for you: you get the Markdown to paste, or a `gh pr create …` command to run yourself.
 
-The file-selection and pull-request modes run only when you ask for them. If you never mention them, the default commit flow behaves exactly as before.
+### 4. Ask it to stage, commit, and push — explicit autonomous mode
 
-The same conventions apply in Codex, Cursor, and Gemini. Codex and Cursor read this as a skill, just like Claude; Gemini reads `GEMINI.md`. Once the files are in place, stage your changes and ask your agent to commit — it follows the same rules.
+Use unambiguous wording when you want the agent to perform the operations itself:
+
+```
+> stage, commit, and push this for me — do it all yourself
+```
+
+The agent inspects the staged and unstaged hunks, selects one coherent change, stages only its specific paths, verifies the staged diff, commits with the quoted-heredoc form, and pushes the current branch to its upstream. It never uses `git add -A` or force-pushes. If the remote is ambiguous, existing staged work conflicts with a safe grouping, or the push is rejected, it stops and reports the exact state instead of guessing.
+
+AI attribution is prohibited in modes 1–3. It is permitted but optional in mode 4; human co-author, reviewer, sign-off, and other trailers must always be true.
+
+The autonomous mode is never inferred. Asking for a message or commands, saying "commit this," or approving commands with "go ahead" keeps the interaction read-only. Ask the agent explicitly to stage, commit, and push when you intend mode 4.
+
+The same conventions apply in Codex, Cursor, and Gemini. Codex and Cursor read this as a skill, just like Claude; Gemini reads `GEMINI.md`. Once the files are in place, ask for a commit command or explicitly request the autonomous workflow — the same mode boundary applies everywhere.
 
 ## Layout
 
