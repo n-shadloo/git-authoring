@@ -6,6 +6,7 @@ A gallery of commits worth imitating, each with the situation that produced it a
 
 - Single-line commits
 - Commits with a body
+- Cutting a padded body
 - Breaking changes
 - Trailers and attribution
 - Backend / API-contract changes
@@ -14,7 +15,7 @@ A gallery of commits worth imitating, each with the situation that produced it a
 
 ## Single-line commits
 
-When the change is self-explanatory, one line is the whole message. A body would just restate the diff.
+Most commits belong here. When the change is self-explanatory, one line is the whole message — a body would just restate the diff, so there isn't one.
 
 ```text
 fix(auth): prevent redirect loop on expired token
@@ -34,7 +35,7 @@ test(orders): cover zero-quantity checkout
 
 ## Commits with a body
 
-Add a body when the *why* isn't visible in the diff. The subject says what; the body says why, and what you weighed.
+Add a body when the *why* isn't visible in the diff — and only then. The subject says what; the body says why, and what you weighed.
 
 Situation: retries from the mobile client were creating duplicate orders.
 
@@ -63,6 +64,38 @@ the largest table. The composite index drops the query from ~2.4s to
 ```
 
 Note how the body captures the reasoning a future reader — or `git blame` — can't reconstruct from the code: the numbers, the cause, the trade-off.
+
+## Cutting a padded body
+
+Situation: a commit swaps a hand-rolled retry loop in the payment client for `tenacity`, because the hand-rolled version retried on `400`s and double-charged one customer. Here is the padded version an agent reaches for first:
+
+```text
+refactor(payments): use tenacity for retries
+
+This commit refactors the retry logic in the payment client. The custom
+retry loop in `client.py` was replaced with the `tenacity` library, and
+`pyproject.toml` was updated to add the dependency. The retry decorator
+is now applied to the `charge` method.
+
+This improves maintainability and readability, and gives us a more
+consistent approach to retries across the codebase. It also makes for a
+better developer experience when working on this module.
+```
+
+Every line fails the test. The first paragraph narrates the diff and names the files — `git show` carries both. The second is generic value claims that would fit any commit ever written. Nothing here is the one thing a reader actually needs: the double-charge.
+
+```text
+fix(payments): stop retrying non-retryable card errors
+
+The hand-rolled retry loop treated every exception as transient and
+retried on 400-class card errors, which double-charged one customer
+before we caught it. tenacity retries only on the transport errors we
+list, so a declined card fails once.
+
+Refs: INC-204
+```
+
+Four lines instead of seven, and all four earn their place: the trigger (an incident with a real customer impact), the consequence a reader wouldn't predict from the diff, and a reference the diff can't carry. The type changed too — `refactor` was wrong for a commit that fixes a defect the user could feel.
 
 ## Breaking changes
 

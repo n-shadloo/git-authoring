@@ -54,7 +54,7 @@ One line, specific, in the imperative — the same discipline as a commit subjec
 
 ## The description
 
-Plain Markdown, structured so a reviewer can scan it. Include the sections that carry weight for this branch; don't pad with empty headings.
+Plain Markdown, structured so a reviewer can scan it. Include only the sections that carry weight for this branch. When a section has nothing real to say, **drop the heading entirely** rather than filling it with "N/A", "None", or a paraphrase of the summary — a description with two substantive sections beats one with five padded ones. The discipline that governs a commit body governs every line here: if a reviewer can recover it from the diff or the Files-changed tab, it isn't worth their time.
 
 **Summary** — why this branch exists, in a sentence or two. The problem, the missing capability, or the goal. Not a restatement of the title.
 
@@ -62,7 +62,7 @@ Plain Markdown, structured so a reviewer can scan it. Include the sections that 
 
 **Testing** — how the change was verified. Draw this from the branch itself: tests added or updated in the diff, CI that runs on the branch, and any manual steps the history implies. Be honest about coverage — if the branch adds no tests, say testing is unverified and suggest what a reviewer should exercise, rather than implying it passed.
 
-**Breaking changes** — call out any incompatible change to an API, a config surface, a CLI, or a data shape, and give the migration. If there are none, write "None" so the reviewer knows it was considered, not overlooked. Mirror the commit's `BREAKING CHANGE:` notation where one exists.
+**Breaking changes** — call out any incompatible change to an API, a config surface, a CLI, or a data shape, and give the migration. Mirror the commit's `BREAKING CHANGE:` notation where one exists. Always check for a break; when there is genuinely nothing to report, drop the section rather than writing "None". Keep it when you have something substantive to say about compatibility — that a new header is optional, that old clients keep working — because that's a real claim, not a placeholder.
 
 **Reviewer / testing checklist** *(when it earns its place)* — a few `- [ ]` items for a reviewer or for pre-merge verification: run the migration, check the mobile client against the new response shape, confirm the feature flag default. Skip it for a one-line fix.
 
@@ -119,7 +119,8 @@ repeated request returns the original order instead of creating another.
 - Manually verified a double-submit against the staging app returns one order.
 
 ### Breaking changes
-None. The header is optional; requests without it behave exactly as before.
+The `Idempotency-Key` header is optional; requests without it behave exactly as
+before, so no client has to change.
 
 ### Reviewer checklist
 - [ ] Confirm the 24h key TTL matches the mobile client's retry ceiling.

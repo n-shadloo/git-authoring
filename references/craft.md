@@ -36,7 +36,23 @@ The diff already shows *how* the code changed. The body's job is everything the 
 
 This is the highest-leverage part of a commit. Months later, `git blame` lands someone on a line and the body is the only record of *why* it's like that. Code review benefits too: the reasoning sits right next to the change.
 
-Keep it wrapped at ~72 characters, separated from the subject by a blank line. And omit it entirely when the change speaks for itself — a forced body that restates the subject is noise.
+**Read the diff before writing a body.** Every claim has to trace to a specific hunk, to an issue the user referenced, or to something the user said in the session. A body assembled from filenames is guesswork, and guesswork in the permanent record is worse than silence.
+
+**Most commits should carry no body at all.** A self-explanatory change gets a subject line and nothing else. There is no minimum length, no bullet quota, and no obligation to fill the space — omitting the body is a correct and common output, not a gap. If you cannot state a real reason from the evidence, omit it. Never invent rationale, motivation, or impact in order to have something to write: an invented reason doesn't just waste the reader's time, it misleads.
+
+The cost of padding compounds. A body that restates the diff teaches the reader that bodies in this repository carry nothing — so they start skipping them, and the one commit that genuinely needed explaining gets skipped along with the rest.
+
+**A body earns its place only when it adds one of these:**
+
+- the problem or trigger that made the change necessary
+- a non-obvious decision, plus the alternative you rejected and why
+- a consequence a reader would not predict from reading the diff
+- migration, operational, or compatibility impact
+- a reference the diff cannot carry — an issue ID, a spec link, an incident
+
+**The test to apply to every line before keeping it:** *could a reviewer recover this from `git show` alone?* If yes, cut it. What survives is the commit's actual contribution to the record.
+
+Prefer fewer, denser lines over more, thinner ones. Keep it wrapped at ~72 characters, separated from the subject by a blank line.
 
 ## The anti-pattern catalogue
 
@@ -52,7 +68,15 @@ Common ways commits go wrong, and the fix.
 
 **Past tense or narrating yourself** — "added a test", "I refactored the parser". Use the imperative: "add a test", "refactor the parser". (A repo whose history is consistently past-tense, like Django's, is the exception — match it.)
 
-**Body that repeats the subject** — if the body just restates the subject as a full sentence, drop it. Bodies are for the *why*.
+**Body that repeats the subject** — "fix(auth): prevent redirect loop on expired token" followed by "This fixes a redirect loop that occurred when the token had expired." The reader just read that sentence. Drop the body, or replace it with the *why*.
+
+**Body that narrates the diff** — "Updated the serializer, then the view, then added a test", or a list of the files touched. `git show` and the Files-changed tab already carry that, more precisely than prose can. Say why the change happened, or say nothing.
+
+**Generic value claims** — "improves maintainability", "enhances readability", "better developer experience", "for consistency", "for clarity". They're unfalsifiable and they fit every commit ever written, which is exactly what makes them worthless. If the change really did remove an inconsistency, name the inconsistency; if you can't name it, cut the line.
+
+**Preambles** — "This commit…", "In this change…", "This PR…". The reader knows what they're looking at. Open with the substance.
+
+**Boilerplate section headers on a short commit** — "Summary", "Changes", "Testing" bolted onto a three-line message. Structure that carries nothing is worse than no structure; save headings for a body long enough to need navigating.
 
 **A period on the subject, or a paragraph as the subject** — the subject is one short line. Detail belongs in the body.
 

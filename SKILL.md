@@ -5,7 +5,7 @@ license: MIT
 compatibility: Requires git and a Git repository. Language-agnostic; no runtime dependencies beyond git. Pull-request output is plain Markdown, so no GitHub CLI is required.
 metadata:
   author: n-shadloo
-  version: "2.1.0"
+  version: "2.1.1"
 allowed-tools: Bash(git:*) Read
 ---
 
@@ -90,12 +90,12 @@ Default to Conventional Commits. But look at `git log --oneline -15` first: if t
 
 ### 5. Compose the message
 
-Build it in this order. See "The format" below for the rules, `references/craft.md` to lift a mechanical message, and `references/conventional-commits.md` for the full type taxonomy and trailer catalog.
+Build it in this order. See "The format" below for the rules, `references/craft.md` to lift a mechanical message or apply the body rules in full, and `references/conventional-commits.md` for the full type taxonomy and trailer catalog.
 
 1. **Type** — the accurate one (feat, fix, refactor, …).
 2. **Scope** — the affected area, if a clear one exists (`references/scopes-and-repos.md`).
 3. **Subject** — imperative, concise, honest.
-4. **Body** — only if it adds something the diff doesn't: the *why*, trade-offs, alternatives considered, side effects. Skip it for self-evident changes.
+4. **Body** — usually none. Most commits are subject-only: there is no minimum length and no bullet quota. Include a body only when it adds one of — the problem or trigger behind the change; a non-obvious decision plus the alternative rejected and why; a consequence a reader wouldn't predict from the diff; migration, operational, or compatibility impact; a reference the diff can't carry (issue ID, spec link, incident). **Omit the body unless it adds one of those**, and never invent a reason to fill the space — an invented reason misleads. No restating the subject, no narrating the diff or listing files, no generic value claims ("improves maintainability", "for consistency"), no "This commit…" preamble. Test every line: could a reviewer recover this from `git show` alone? If yes, cut it.
 5. **Footers** — issue links (`Closes #123`), genuine co-authors, `BREAKING CHANGE:` when applicable.
 
 ### 6. Self-check
@@ -105,10 +105,11 @@ Before presenting, confirm:
 - Type matches what the diff actually does.
 - Subject is imperative and completes "If applied, this commit will …".
 - Subject ≤ 50 characters if reasonable, ≤ 72 hard; no trailing period.
-- A body exists if — and only if — the change needs explaining, and it says *why*, not *how*.
+- A body exists if — and only if — it adds the problem, a rejected alternative, an unpredictable consequence, migration impact, or a reference the diff can't carry. No body is the common, correct case.
+- Every body line survives the `git show` test: nothing restates the subject, narrates the diff, lists files, or makes a generic value claim.
 - Breaking changes are notated (`!` and/or a `BREAKING CHANGE:` footer).
 - Trailers are well-formed (`references/conventional-commits.md`) and true — no AI attribution.
-- Nothing is invented — every claim is backed by the diff.
+- Nothing is invented — every claim traces to a hunk, a referenced issue, or something the user said.
 
 ### 7. Present the exact commit command
 
@@ -151,7 +152,7 @@ This runs **only when the user asks for pull-request help** — "write a PR titl
    ```
 
    The three-dot `<base>...HEAD` diffs from the merge base, so it shows only this branch's work.
-3. **Write the PR as plain Markdown** — a strong, specific title, then a description with **Summary** (why this branch exists), **What changed** (the substantive changes grouped by intent, not a file dump), **Testing** (how it was verified — from tests in the diff, CI, or manual steps; say what you could and couldn't confirm), and **Breaking changes** (spell out any contract change and its migration, or state "None"). Add a short reviewer/testing checklist when it earns its place. Tailor the emphasis to the PR's type (feature, fix, refactor, docs, breaking).
+3. **Write the PR as plain Markdown** — a strong, specific title, then a description with **Summary** (why this branch exists), **What changed** (the substantive changes grouped by intent, not a file dump), **Testing** (how it was verified — from tests in the diff, CI, or manual steps; say what you could and couldn't confirm), and **Breaking changes** (spell out any contract change and its migration). Add a short reviewer/testing checklist when it earns its place. Tailor the emphasis to the PR's type (feature, fix, refactor, docs, breaking). Apply the same discipline as a commit body: drop any section with nothing real to say rather than filling it with "N/A", "None", or a restatement of the summary. Two substantive sections beat five padded ones.
 4. **Ground every claim in the history and diff.** Don't assert tests passed if the branch adds none — say testing is unverified instead. Verify as thoroughly as the branch allows.
 5. **Never open the PR yourself.** Output the Markdown for the user to paste, or offer the exact command for them to run — for example `gh pr create --base <base> --title "…" --body-file <file>` — and leave running it to them. A follow-up "go ahead" does not change mode 3 into an execution mode.
 

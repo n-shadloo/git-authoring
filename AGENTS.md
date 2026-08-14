@@ -98,7 +98,7 @@ Conventions worth recognising: **Django** (`Fixed #31234 -- Added a system check
 1. **Type** — the accurate one (see "Types" below).
 2. **Scope** — the affected area, if a clear one exists (see "Scopes" below).
 3. **Subject** — imperative, concise, honest.
-4. **Body** — only if it adds something the diff doesn't: the *why*, trade-offs, alternatives considered, side effects. Skip it for self-evident changes.
+4. **Body** — usually none. Most commits are subject-only: there is no minimum length and no bullet quota. Include a body only when it adds one of — the problem or trigger behind the change; a non-obvious decision plus the alternative rejected and why; a consequence a reader wouldn't predict from the diff; migration, operational, or compatibility impact; a reference the diff can't carry (issue ID, spec link, incident). **Omit the body unless it adds one of those**, and never invent a reason to fill the space — an invented reason misleads. No restating the subject, no narrating the diff or listing files, no generic value claims ("improves maintainability", "for consistency"), no "This commit…" preamble. Test every line: could a reviewer recover this from `git show` alone? If yes, cut it. See "The format" below.
 5. **Footers** — issue links (`Closes #123`), genuine co-authors, `BREAKING CHANGE:` when applicable.
 
 ### 6. Self-check
@@ -106,10 +106,11 @@ Conventions worth recognising: **Django** (`Fixed #31234 -- Added a system check
 - Type matches what the diff actually does.
 - Subject is imperative and completes "If applied, this commit will …".
 - Subject ≤ 50 characters if reasonable, ≤ 72 hard; no trailing period.
-- A body exists if — and only if — the change needs explaining, and it says *why*, not *how*.
+- A body exists if — and only if — it adds the problem, a rejected alternative, an unpredictable consequence, migration impact, or a reference the diff can't carry. No body is the common, correct case.
+- Every body line survives the `git show` test: nothing restates the subject, narrates the diff, lists files, or makes a generic value claim.
 - Breaking changes are notated (`!` and/or a `BREAKING CHANGE:` footer).
 - Trailers are well-formed and true — no AI attribution.
-- Nothing is invented — every claim is backed by the diff.
+- Nothing is invented — every claim traces to a hunk, a referenced issue, or something the user said.
 
 ### 7. Present the exact commit command
 
@@ -150,12 +151,12 @@ This runs **only when the user asks for pull-request help** — "write a PR titl
    ```
 
    The three-dot `<base>...HEAD` diffs from the merge base, so it shows only this branch's work.
-3. **Write the PR as plain Markdown:**
+3. **Write the PR as plain Markdown,** dropping any section with nothing real to say rather than filling it with "N/A", "None", or a restatement of the summary — two substantive sections beat five padded ones:
    - **Title** — one specific line; mirror the primary commit's subject when the branch is single-purpose, and follow the repo's PR-title style (a `type(scope):` title where the project squashes with Conventional Commits).
    - **Summary** — why this branch exists, in a sentence or two.
    - **What changed** — the substantive changes grouped by intent, not a file dump.
    - **Testing** — how it was verified: tests added in the diff, CI, or manual steps. Say what you could and couldn't confirm; if the branch adds no tests, state that testing is unverified rather than implying it passed.
-   - **Breaking changes** — spell out any contract change and its migration, or state "None".
+   - **Breaking changes** — always check for one; spell out any contract change and its migration. When there is nothing to report, drop the section rather than writing "None".
    - Add a short **reviewer/testing checklist** when it earns its place, and tailor the emphasis to the PR's type (feature, fix, refactor, docs, breaking).
 4. **Ground every claim in the history and diff**, and verify as thoroughly as the branch allows.
 5. **Never open the PR yourself.** Output the Markdown for the user to paste, or offer the exact command for them to run — for example `gh pr create --base <base> --title "…" --body-file <file>` — and leave running it to them. A follow-up "go ahead" does not change mode 3 into an execution mode.
@@ -208,8 +209,11 @@ AI attribution is allowed only in this explicitly selected mode. It is optional,
 
 - Separated from the subject by one blank line — not optional when a body exists; `git log`, `shortlog`, and `rebase` rely on it.
 - Explains *what* and *why*, not *how* (the diff shows how). Free-form, may span paragraphs. Wrap at ~72 characters.
-- Cover what the diff can't: why the change was needed, why this approach (alternatives rejected, trade-offs accepted), and consequences the next person should know.
-- Include it when the change isn't self-explanatory; omit it when it is.
+- **Most commits need no body.** A self-explanatory change is subject-only. There is no minimum length, no bullet quota, and no obligation to fill the space — omitting the body is a correct and common output, not a gap.
+- **Read the diff before writing one.** Every claim must trace to a specific hunk, to an issue the user referenced, or to something the user said in the session. If you can't state a real reason from that evidence, omit the body: an invented rationale misleads, which is worse than saying nothing.
+- **A body earns its place only when it adds one of:** the problem or trigger that made the change necessary; a non-obvious decision, plus the alternative rejected and why; a consequence a reader would not predict from the diff; migration, operational, or compatibility impact; a reference the diff cannot carry (issue ID, spec link, incident).
+- **Never include:** a restatement of the subject in longer words; narration of what the diff already shows ("updated X, then updated Y", file lists); generic value claims not grounded in the change ("improves maintainability", "enhances readability", "better developer experience", "for consistency", "for clarity"); preambles ("This commit…", "In this change…", "This PR…"); boilerplate section headers on a short commit.
+- **Test every line before keeping it:** could a reviewer recover this from `git show` alone? If yes, cut it. Prefer fewer, denser lines over more, thinner ones.
 
 **Footers / trailers**
 
