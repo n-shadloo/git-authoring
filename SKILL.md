@@ -1,11 +1,11 @@
 ---
 name: git-authoring
-description: Authors Conventional Commits messages, pull-request content, and release notes from real git changes, or carries out a complete stage-commit-push workflow when explicitly told to do it all. Supports five request-selected modes: write an exact commit command for already-staged changes; choose one coherent set of unstaged files and present staging plus commit commands; write a pull-request title and structured Markdown description from the branch diff; stage, commit, and push the work itself on an unmistakable autonomous request; or write the release note for a version from what actually landed since the last release. Use whenever the user is about to commit, asks for a commit message or commit command, mentions writing/fixing/improving a commit, refers to staged changes, asks which files belong in a commit, asks for a pull-request title or description, asks for release notes or a changelog entry for a version, or explicitly asks the agent to stage, commit, and push. Do not trigger for unrelated git work such as branching, rebasing, or resolving merge conflicts unless a commit, pull request, or release note is being written.
+description: Authors Conventional Commits messages, pull-request content, and release notes from real git changes, or runs the full stage-commit-push workflow when explicitly told to. Five modes: write a commit command for staged changes; choose one coherent set of unstaged files and present staging plus commit commands; write a pull-request title and description from the branch diff; stage, commit, and push itself on an unmistakable autonomous request; or write a version's release note from what landed since the last release. Use whenever the user is about to commit, asks for a commit message or command, mentions writing or improving a commit, refers to staged changes, asks which files belong in a commit, asks for a pull-request title or description, asks for release notes or a changelog entry, or asks the agent to stage, commit, and push. Do not trigger for unrelated git work such as branching, rebasing, or resolving merge conflicts unless a commit, pull request, or release note is being written.
 license: MIT
 compatibility: Requires git and a Git repository. Language-agnostic; no runtime dependencies beyond git. Pull-request and release-note output is plain Markdown, so GitHub CLI is optional — it is used only to detect prior release style and, on explicit request in mode 4, to publish a release.
 metadata:
   author: n-shadloo
-  version: "2.3.0"
+  version: "2.3.1"
 allowed-tools: Bash(git:*) Bash(gh:*) Read
 ---
 
