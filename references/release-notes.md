@@ -147,7 +147,7 @@ gh release create v<version> \
   --notes-file <path-to-notes.md>
 ```
 
-Tag first and push it, so `gh` attaches the release to the tag you wrote rather than creating one of its own. Match the repo's prior pattern for latest/prerelease flags (`--latest`, `--prerelease`) rather than choosing one — `gh release view <last> --json isLatest,isPrerelease` shows what the project has been doing.
+Tag first and push it, so `gh` attaches the release to the tag you wrote rather than creating one of its own. Match the repo's prior pattern for latest/prerelease flags (`--latest`, `--prerelease`) rather than choosing one — `gh release view <last> --json tagName,isPrerelease,isDraft` reports the flags, and `gh release list` marks which release is Latest.
 
 **Hard limits:**
 
