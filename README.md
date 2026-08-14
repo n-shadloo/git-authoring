@@ -1,10 +1,10 @@
 # git-authoring
 
-A commit- and pull-request authoring skill for AI coding agents — built for Claude, and portable to Codex, Cursor, and Gemini CLI. It has four request-selected modes: generate an exact commit command for staged changes; choose one coherent set of files and generate staging plus commit commands; write a pull-request title and description; or, only when explicitly told to do it all, stage, commit, and push autonomously.
+A commit-, pull-request-, and release-note authoring skill for AI coding agents — built for Claude, and portable to Codex, Cursor, and Gemini CLI. It has five request-selected modes: generate an exact commit command for staged changes; choose one coherent set of files and generate staging plus commit commands; write a pull-request title and description; stage, commit, and push autonomously when explicitly told to do it all; or write the release note for a version from what actually landed since the last release.
 
 ## Why
 
-Most commit-message helpers stop at the format: they slap a `type:` on the front and call it done. The format is the easy part. The hard part is choosing the right type, writing a subject that actually says what changed, and using the body to record *why* — the context the diff can't show and that you'll want back six months later when `git blame` drops you on a line. This skill treats the format as table stakes and spends its effort on intent — for pull requests as much as commits.
+Most commit-message helpers stop at the format: they slap a `type:` on the front and call it done. The format is the easy part. The hard part is choosing the right type, writing a subject that actually says what changed, and using the body to record *why* — the context the diff can't show and that you'll want back six months later when `git blame` drops you on a line. This skill treats the format as table stakes and spends its effort on intent — for pull requests and release notes as much as commits.
 
 It defaults to Conventional Commits (imperative subject, `type(scope): …`, breaking-change notation, issue references) and enforces that discipline consistently. It also reads the repository's history first, so if a project uses a different convention it matches that instead of imposing one.
 
@@ -18,16 +18,17 @@ It defaults to Conventional Commits (imperative subject, `type(scope): …`, bre
 - Tells you when staged changes should be split into separate commits, and gives you the commands to do it.
 - On request, chooses which unstaged files belong together as one coherent commit and gives you the exact staging and commit commands.
 - On request, writes a complete pull-request title and description — summary, what changed, testing, breaking changes — from the branch's diff against its base.
-- Keeps the first three modes read-only: it never stages, commits, pushes, or opens a PR.
+- On request, writes the release note for a version from the real range since the last release, in the style your project's previous releases already use.
+- Keeps every mode except the autonomous one read-only: it never stages, commits, pushes, opens a PR, tags, or publishes a release.
 - Adds no attribution trailers in any mode unless you ask for them — see [Attribution and trailers](#attribution-and-trailers).
-- Runs staging, committing, and pushing itself only when you explicitly ask for the autonomous mode.
+- Runs staging, committing, and pushing itself only when you explicitly ask for the autonomous mode — and tags and publishes a release only on a further explicit ask.
 
 ## Works with
 
 Claude, Codex, and Cursor all read this as an Agent Skill: `SKILL.md` plus the
 `references/` folder, loaded on demand so deeper guidance is pulled in only when a
-commit or pull request needs it. The skill format is a shared standard across those
-three tools, so the same folder works in each without changes.
+commit, pull request, or release note needs it. The skill format is a shared standard
+across those three tools, so the same folder works in each without changes.
 
 Gemini CLI doesn't read skills — it reads `GEMINI.md` at the repo root, which carries
 the same conventions. A self-contained `AGENTS.md` at the root is also provided as
@@ -103,11 +104,11 @@ Gemini CLI doesn't read Agent Skills directly; it reads `GEMINI.md`.
 `GEMINI.md` carries the same conventions and points at `AGENTS.md` for the full
 detail.
 
-The only requirement is `git` on your path and a Git repository to run in.
+The only requirement is `git` on your path and a Git repository to run in. [GitHub CLI](https://cli.github.com) (`gh`) is optional: release-note mode uses it to read your previous releases and match their style, and the autonomous mode needs it to publish one. Without it, the skill falls back to any `CHANGELOG.md` / `RELEASE*.md` in the repo for style and hands you the note as Markdown, telling you which check failed.
 
 ## Use
 
-The skill has one default and three on-request modes. The first three are read-only: the agent inspects git and gives you commands or Markdown, but you run any operation yourself. Only the fourth mode lets the agent mutate git.
+The skill has one default and four on-request modes. All of them are read-only except the autonomous one: the agent inspects git and gives you commands or Markdown, but you run any operation yourself. Only mode 4 lets the agent mutate git.
 
 ### 1. Get a commit command for staged changes — the default
 
@@ -172,11 +173,46 @@ Use unambiguous wording when you want the agent to perform the operations itself
 
 The agent inspects the staged and unstaged hunks, selects one coherent change, stages only its specific paths, verifies the staged diff, commits with the quoted-heredoc form, and pushes the current branch to its upstream. It never uses `git add -A` or force-pushes. If the remote is ambiguous, existing staged work conflicts with a safe grouping, or the push is rejected, it stops and reports the exact state instead of guessing.
 
+On a further explicit ask, mode 4 will also tag and publish a GitHub release. It checks that `gh` is installed and authenticated first, and falls back to handing you the note as Markdown if either check fails. It never overwrites or moves an existing tag or release, never uses `--force`, and never deletes either — if the version is already tagged or released, it stops and tells you.
+
 Mode 4 is an exception to the read-only rule and to nothing else. In particular it adds no attribution of its own — see [Attribution and trailers](#attribution-and-trailers).
 
 The autonomous mode is never inferred. Asking for a message or commands, saying "commit this," or approving commands with "go ahead" keeps the interaction read-only. Ask the agent explicitly to stage, commit, and push when you intend mode 4.
 
-The same conventions apply in Codex, Cursor, and Gemini. Codex and Cursor read this as a skill, just like Claude; Gemini reads `GEMINI.md`. Once the files are in place, ask for a commit command or explicitly request the autonomous workflow — the same mode boundary applies everywhere.
+### 5. Ask for the release note for a version — on request
+
+When you're cutting a release, ask for the note:
+
+```
+> write the release notes for 2.3.0
+```
+
+It fetches tags, works out the range from the last version tag reachable from `HEAD`, reads the actual diff over that range — not just the commit subjects — and returns the note as a Markdown block you can paste:
+
+```markdown
+# v2.3.0
+
+Minor release. Adds a fifth mode: the skill now writes the release note for a
+version from what actually landed since the last release.
+
+## What changed
+
+**Release notes are grounded in the range, not the subjects.** The note is built
+from `git diff <last-tag>..HEAD`, so a commit whose message understated what it
+shipped doesn't understate it twice.
+
+## Upgrade notes
+
+Drop-in replacement for 2.2.0. The four existing modes are unchanged.
+```
+
+It matches your project's own release style — tag prefix, title shape, headings, section order — over any built-in template, and says so when the two differ. Sections with nothing real in them are dropped rather than filled with "None".
+
+Two things it won't do. If the repository has no versioning at all — no version tags, no version field, no releases — it says so and stops rather than creating your first tag and silently deciding your scheme for you. And if the last tag disagrees with the version field in your project, it reports the discrepancy and tells you which one it used as the range base instead of quietly picking one.
+
+Publishing is separate: the note lands in the conversation, and writing it to a file or cutting the actual GitHub release each take their own explicit ask (the latter via mode 4).
+
+The same conventions apply in Codex, Cursor, and Gemini. Codex and Cursor read this as a skill, just like Claude; Gemini reads `GEMINI.md`. Once the files are in place, ask for a commit command, a release note, or explicitly request the autonomous workflow — the same mode boundary applies everywhere.
 
 ## Attribution and trailers
 
@@ -238,7 +274,7 @@ That's the whole mechanism: an explicit ask in the session, or a standing line i
 
 ```
 git-authoring/
-├── SKILL.md                          # skill: workflow, commit + PR authoring
+├── SKILL.md                          # skill: workflow, commit + PR + release authoring
 ├── AGENTS.md                         # always-on layer; source for the pointers below
 ├── GEMINI.md                         # Gemini CLI
 ├── .cursor/
@@ -249,7 +285,8 @@ git-authoring/
 │   ├── examples.md                   # worked commits, incl. splits and staging
 │   ├── craft.md                      # writing subjects and bodies well
 │   ├── scopes-and-repos.md           # scopes; matching a repo's style
-│   └── pull-requests.md              # PR titles and descriptions
+│   ├── pull-requests.md              # PR titles and descriptions
+│   └── release-notes.md              # release notes; tagging and publishing
 ├── README.md
 └── LICENSE
 ```

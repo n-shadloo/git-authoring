@@ -1,19 +1,19 @@
 ---
 name: git-authoring
-description: Authors Conventional Commits messages and pull-request content from real git changes, or carries out a complete stage-commit-push workflow when explicitly told to do it all. Supports four request-selected modes: write an exact commit command for already-staged changes; choose one coherent set of unstaged files and present staging plus commit commands; write a pull-request title and structured Markdown description from the branch diff; or, only on an unmistakable autonomous request, stage, commit, and push the work itself. Use whenever the user is about to commit, asks for a commit message or commit command, mentions writing/fixing/improving a commit, refers to staged changes, asks which files belong in a commit, asks for a pull-request title or description, or explicitly asks the agent to stage, commit, and push. Do not trigger for unrelated git work such as branching, rebasing, or resolving merge conflicts unless a commit or pull request is being written.
+description: Authors Conventional Commits messages, pull-request content, and release notes from real git changes, or carries out a complete stage-commit-push workflow when explicitly told to do it all. Supports five request-selected modes: write an exact commit command for already-staged changes; choose one coherent set of unstaged files and present staging plus commit commands; write a pull-request title and structured Markdown description from the branch diff; stage, commit, and push the work itself on an unmistakable autonomous request; or write the release note for a version from what actually landed since the last release. Use whenever the user is about to commit, asks for a commit message or commit command, mentions writing/fixing/improving a commit, refers to staged changes, asks which files belong in a commit, asks for a pull-request title or description, asks for release notes or a changelog entry for a version, or explicitly asks the agent to stage, commit, and push. Do not trigger for unrelated git work such as branching, rebasing, or resolving merge conflicts unless a commit, pull request, or release note is being written.
 license: MIT
-compatibility: Requires git and a Git repository. Language-agnostic; no runtime dependencies beyond git. Pull-request output is plain Markdown, so no GitHub CLI is required.
+compatibility: Requires git and a Git repository. Language-agnostic; no runtime dependencies beyond git. Pull-request and release-note output is plain Markdown, so GitHub CLI is optional — it is used only to detect prior release style and, on explicit request in mode 4, to publish a release.
 metadata:
   author: n-shadloo
-  version: "2.2.0"
-allowed-tools: Bash(git:*) Read
+  version: "2.3.0"
+allowed-tools: Bash(git:*) Bash(gh:*) Read
 ---
 
 # Git Authoring
 
-Turn real git changes into history a reader will thank you for six months from now. By default this skill reads what is actually staged, works out the intent behind the change, and presents an exact commit command with a Conventional Commits message: an accurate type, a well-chosen scope, an imperative subject, and — when the change warrants it — a body that explains *why* and footer trailers that carry metadata. On request, it can instead choose one coherent set of files and present staging plus commit commands, write complete pull-request content, or carry out staging, committing, and pushing itself.
+Turn real git changes into history a reader will thank you for six months from now. By default this skill reads what is actually staged, works out the intent behind the change, and presents an exact commit command with a Conventional Commits message: an accurate type, a well-chosen scope, an imperative subject, and — when the change warrants it — a body that explains *why* and footer trailers that carry metadata. On request, it can instead choose one coherent set of files and present staging plus commit commands, write complete pull-request content, write the release note for a version, or carry out staging, committing, and pushing itself.
 
-The point is not output that merely passes a linter. Getting the shape right (`type(scope): subject`) is the easy part, and this skill treats it as table stakes. The value is in choosing the right type, writing a subject that says what changed, using the body to record the reasoning the diff itself can't show, and — for a pull request — giving a reviewer a title and description they can act on.
+The point is not output that merely passes a linter. Getting the shape right (`type(scope): subject`) is the easy part, and this skill treats it as table stakes. The value is in choosing the right type, writing a subject that says what changed, using the body to record the reasoning the diff itself can't show, and — for a pull request or a release note — giving the reader something they can act on.
 
 ## What this skill does
 
@@ -25,9 +25,10 @@ The point is not output that merely passes a linter. Getting the shape right (`t
 - Decides when staged changes should be **split into several commits**, and proposes the split.
 - On request, **chooses which unstaged files** belong together as one coherent commit, then presents exact staging and commit commands.
 - On request, writes a complete **pull-request title and description** — summary, what changed, testing, breaking changes — from the branch's history and its diff against the base branch.
+- On request, writes the **release note** for a version from the real range since the last release, matching the project's own release style.
 - Matches the repository's **existing convention** when it differs from Conventional Commits.
-- Keeps commit-message, file-selection, and pull-request modes **read-only**: it presents commands or Markdown and leaves execution to the user.
-- On an explicit autonomous request only, **stages, commits, and pushes** the selected work end to end.
+- Keeps commit-message, file-selection, pull-request, and release-note modes **read-only**: it presents commands or Markdown and leaves execution to the user.
+- On an explicit autonomous request only, **stages, commits, and pushes** the selected work end to end — and, on a further explicit request, tags and publishes a release.
 
 ## Choose the mode
 
@@ -36,22 +37,24 @@ Choose exactly one mode from the user's request. Do not blend their execution ru
 1. **Commit command for already-staged changes (default).** Inspect the staged diff, write the message, and present the exact heredoc `git commit` command for the user to run.
 2. **Choose files, then provide commands (on request).** Inspect staged and unstaged work, select one coherent set, and present the exact `git add` command(s) followed by the heredoc commit command for the user to run.
 3. **Pull-request title and description (on request).** Inspect the branch against its base and produce the title plus structured Markdown description. Do not stage, commit, push, or open the PR.
-4. **Autonomous stage, commit, and push (explicit request only).** Run the complete workflow yourself only when the user unmistakably asks you to carry out the git operations — for example, "stage, commit, and push this for me" or "do it all yourself."
+4. **Autonomous stage, commit, and push (explicit request only).** Run the complete workflow yourself only when the user unmistakably asks you to carry out the git operations — for example, "stage, commit, and push this for me" or "do it all yourself." On a *further* explicit request, this mode may also tag and publish a release.
+5. **Release note for a version (on request).** Establish the range since the last release, read what actually landed, and produce the note as a Markdown block. Do not tag, publish, or write a file.
 
-A request for a message, commands, file selection, or PR content selects modes 1–3. A bare "commit this," "go ahead," or confirmation after you present commands does **not** silently switch to mode 4. If execution intent is ambiguous, stay read-only and ask for an explicit autonomous request before mutating git.
+A request for a message, commands, file selection, PR content, or release notes selects modes 1–3 and 5. A bare "commit this," "go ahead," or confirmation after you present commands or a note does **not** silently switch to mode 4. If execution intent is ambiguous, stay read-only and ask for an explicit autonomous request before mutating git.
 
 ## Ground rules
 
 The mode boundary is a hard guarantee.
 
-- **Modes 1–3 never mutate git.** Run only read-only inspection. Never stage, commit, push, or open a pull request in these modes, even after a follow-up confirmation. Present exact commands for the user to run.
+- **Modes 1–3 and 5 never mutate git.** Run only read-only inspection. Never stage, commit, push, open a pull request, tag, or publish a release in these modes, even after a follow-up confirmation. Present exact commands or Markdown for the user to run.
 - **No attribution trailers by default — in every mode, mode 4 included.** No `Co-authored-by:`, no `Signed-off-by:`, no `Reviewed-by:`, no "Generated by"/"written with" line, and no AI or agent identity, in commits or in pull-request descriptions. The commit author is whatever `git config user.name` / `user.email` resolves to. Never look up, infer, or attribute the work to anyone else, and never invent a name or an email address. Trailers are added only through the opt-in in "Footers / trailers" below.
-- **Mode 4 is the sole execution exception.** Once explicitly selected, it may stage, commit, and push. It is an exception to the read-only rule and to nothing else — the attribution default above applies to it unchanged.
+- **Mode 4 is the sole execution exception.** Once explicitly selected, it may stage, commit, and push — and, on a separate explicit request, tag and publish a release. It is an exception to the read-only rule and to nothing else — the attribution default above applies to it unchanged.
 - **Never infer mode 4.** Do not treat ordinary commit wording or approval of proposed commands as permission to execute. The user must clearly ask the agent to perform the operations itself.
+- **Never infer publishing.** Producing a release note in mode 5, or the user approving one, is not permission to tag or publish. Publishing takes mode 4 *and* an explicit request to publish, together.
 
 ## Workflow
 
-This is mode 1, the default path: writing a commit command for what is already staged. Work through the steps in order; for a small, single-purpose change this file is enough on its own, so reach for a reference file only when a step points to one. The other three modes activate only when the user asks for them and each has its own section after this workflow.
+This is mode 1, the default path: writing a commit command for what is already staged. Work through the steps in order; for a small, single-purpose change this file is enough on its own, so reach for a reference file only when a step points to one. The other four modes activate only when the user asks for them and each has its own section after this workflow.
 
 ### 1. Gather context
 
@@ -182,6 +185,31 @@ Enter this mode only when the user explicitly asks the agent to perform the comp
 
 Mode 4 changes nothing about attribution. It adds no `Co-authored-by:`, no `Signed-off-by:`, and no AI or agent identity, and the commit author stays whatever `git config user.name` / `user.email` resolves to. Being told to do the work is not a request to be credited for it. Trailers appear here only under the same opt-in that governs every other mode.
 
+### Publishing a release (mode 4, on a further explicit request)
+
+Mode 4 may also tag and publish a release — but only when the user explicitly asks to publish. Producing a release note, or the user approving one, is never enough. See `references/release-notes.md` for the full workflow.
+
+**Check availability first:** `command -v gh` and `gh auth status`. If either fails, fall back to the release note as a Markdown block in the conversation and say which check failed. An unavailable `gh` is never a reason to stop — the note is the deliverable.
+
+Then create an annotated tag matching the detected tag style, push it, and publish with `gh release create <tag> --title "<style-matched title>" --notes-file <file>`, matching the repo's prior pattern for latest/prerelease flags rather than choosing one.
+
+**Hard limits:**
+
+- **Never overwrite or move an existing tag or release.** If either already exists for this version, stop and report it.
+- **Never `--force`, never delete a tag or release.**
+- Mode 4's other constraints are unchanged: still never opens pull requests, still never force-pushes, still never `git add -A`.
+
+## Mode 5: Release notes (only when asked)
+
+This runs **only when the user asks for release-note or changelog content** — "write the release notes for 2.3.0", "what goes in the changelog for this version". It never fires as part of a commit or PR request. `references/release-notes.md` carries the full guidance; the essentials:
+
+1. **Check the repo already versions itself** — version-shaped tags, a version field in the project, or existing GitHub releases. If none exist, say so and stop. Do not invent a versioning scheme or create the repo's first tag unprompted; offer an unversioned summary of what changed instead.
+2. **Establish the range, and fetch first.** `git fetch --tags`, then find the most recent version tag reachable from `HEAD`. Cross-check it against the project's version field; **if they disagree, report the discrepancy and state which one you used as the base** rather than silently picking.
+3. **Read the range, not just the subjects.** `git log <base>..HEAD --oneline` for the story, then `git diff <base>..HEAD` for what actually landed — a commit message can understate or misdescribe what it shipped.
+4. **Match the repo's release style.** Prior releases outrank the canonical template: detect tag prefix, title style, heading levels, and section names from `gh release view <last>` or an existing `CHANGELOG.md`. Note any deviation once rather than reformatting the project's history.
+5. **Group by user-visible effect,** not by file or commit, and exclude internal churn that changes no behaviour. Every entry traces to a real commit or hunk; omit any section with nothing real in it rather than writing "None". The commit-body discipline in `references/craft.md` applies to every line.
+6. **Output the note as a Markdown block, and stop.** Writing a file happens only on explicit request; publishing is mode 4 plus its own explicit request.
+
 ## The format
 
 ```text
@@ -279,3 +307,4 @@ Read these on demand; don't load them for routine commits.
 - **`references/craft.md`** — how to write a subject and body that communicate, the *why*-not-*how* principle, and a catalogue of common bad commits with fixes. Read when lifting a mechanical message.
 - **`references/scopes-and-repos.md`** — choosing a scope (with backend/Django/DRF and other ecosystem cues), and detecting and matching a repository's existing convention. Read when picking a scope or entering an unfamiliar repo.
 - **`references/pull-requests.md`** — base-branch detection, gathering the branch's history and diff, and writing a PR title and a structured description (summary, changes, testing, breaking changes) with type-aware emphasis and a reviewer checklist. Read when writing pull-request content.
+- **`references/release-notes.md`** — the versioning precondition, establishing the range since the last release, detecting and matching a repo's release style, the canonical section template, content rules, output targets, and the `gh` publish workflow with its hard limits. Read when writing a release note or publishing a release.

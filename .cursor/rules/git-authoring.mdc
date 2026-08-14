@@ -1,10 +1,10 @@
 ---
-description: Conventional Commit and pull-request conventions for this repository
+description: Conventional Commit, pull-request, and release-note conventions for this repository
 alwaysApply: true
 ---
 
-When writing a git commit message or a pull request, follow `AGENTS.md` at the
-repository root.
+When writing a git commit message, a pull request, or a release note, follow `AGENTS.md`
+at the repository root.
 
 - Read `git diff --staged` — the staged diff is the source of truth, not filenames.
 - Choose an accurate Conventional Commit type and scope; write an imperative subject
@@ -18,8 +18,16 @@ repository root.
 - For a pull request (only when asked), detect the base branch (main/master), read the
   branch's diff against it, and write a title plus a description with summary, what
   changed, testing, and breaking changes, as plain Markdown.
+- For a release note (only when asked), fetch tags first, base the range on the last
+  version tag reachable from `HEAD`, and report any disagreement with the project's
+  version field instead of silently picking one. Read the diff, not just the subjects;
+  group entries by user-visible effect; match the style of prior releases over any
+  template; drop empty sections rather than writing "None". If the repository has no
+  versioning at all, say so and stop — never create its first tag unprompted.
 - Never mutate git on your own: propose the exact `git add` / `git commit` / PR commands
-  and run them only when explicitly asked; commit the staged set as-is.
+  and run them only when explicitly asked; commit the staged set as-is. Tagging and
+  publishing a release take the autonomous mode *and* an explicit request to publish —
+  never overwrite or move an existing tag or release.
 - No attribution trailers by default, in every mode: no `Co-authored-by:`, `Signed-off-by:`,
   `Reviewed-by:`, or AI or agent identity. Add one only when the user asks in the session or
   a standing instruction exists in this repository's agent context file — never inferred from
