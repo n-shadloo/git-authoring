@@ -37,6 +37,8 @@ Before imposing Conventional Commits, look at `git log --oneline -20`:
 
 When you deliberately follow a non-default convention, note it in one line ("matching this repo's `Fixed #nnnn` style") so the choice is visible.
 
+**Trailers are excluded from convention detection.** What you match from history is the subject shape, the scope vocabulary, the tense — never a trailer. Even in a repo where every commit carries `Signed-off-by`, do not add one: a trailer is an assertion about who did the work and who vouches for it, and that is not something to infer from pattern matching. Attribution trailers and sign-offs come only from an explicit request in the session or a standing instruction in the repo's agent context file.
+
 ## Non–Conventional-Commits conventions to recognise
 
 **Django** uses its own format, not Conventional Commits:
@@ -52,5 +54,7 @@ Fixed #31234 -- Added a system check for duplicated field names.
 **Angular** uses Conventional Commits with a fixed scope list drawn from its packages (`common`, `compiler`, `router`, `forms`, …) and an imperative, lowercase, no-period subject under a 100-character header limit.
 
 **Linux kernel** uses a plain imperative subject prefixed by subsystem (`net: `, `mm: `), a mandatory explanatory body, and a `Signed-off-by:` trailer (DCO). No `type():` prefix.
+
+The trailers named above are described so you recognise them, not so you emit them: seeing `Co-authored-by:` throughout a Django history or `Signed-off-by:` throughout the kernel's does not authorise adding either. Match the subject and body style; leave the trailer to an explicit request.
 
 The common thread: read the history, then be consistent with it. Conventional Commits is the default this skill reaches for, not a rule to force onto a repo that has chosen otherwise.

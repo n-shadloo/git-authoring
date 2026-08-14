@@ -120,7 +120,19 @@ must move to `sign_v2`, which has been available since 2.3.
 
 ## Trailers and attribution
 
-Credit collaborators and link issues with footers:
+**The default carries no attribution.** A commit reads as the repo owner's own work — no co-author, no sign-off, no reviewer, no AI or agent identity — regardless of mode, and regardless of what the repo's history happens to contain. Issue references and `BREAKING CHANGE:` are not attribution and stay in by default when they apply. So the default form of the fix below is exactly this — a body, and the issue the user referenced, nothing more:
+
+```text
+fix(serializers): handle null profile in user payload
+
+A user without a profile row raised AttributeError during
+serialization. Fall back to an empty profile object so the endpoint
+returns 200 with nulls instead of 500.
+
+Closes #517
+```
+
+**Attribution is opt-in.** Add it only when the user asks this session ("add Sara as co-author, and I reviewed it") or a standing instruction in the repo's agent context file calls for it. The names come from what the user supplied — never invented. Given that request, the same commit becomes:
 
 ```text
 fix(serializers): handle null profile in user payload

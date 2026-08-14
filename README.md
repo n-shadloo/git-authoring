@@ -6,7 +6,7 @@ A commit- and pull-request authoring skill for AI coding agents — built for Cl
 
 Most commit-message helpers stop at the format: they slap a `type:` on the front and call it done. The format is the easy part. The hard part is choosing the right type, writing a subject that actually says what changed, and using the body to record *why* — the context the diff can't show and that you'll want back six months later when `git blame` drops you on a line. This skill treats the format as table stakes and spends its effort on intent — for pull requests as much as commits.
 
-It defaults to Conventional Commits (imperative subject, `type(scope): …`, breaking-change notation, issue and co-author trailers) and enforces that discipline consistently. It also reads the repository's history first, so if a project uses a different convention it matches that instead of imposing one.
+It defaults to Conventional Commits (imperative subject, `type(scope): …`, breaking-change notation, issue references) and enforces that discipline consistently. It also reads the repository's history first, so if a project uses a different convention it matches that instead of imposing one.
 
 ## What it does
 
@@ -14,11 +14,12 @@ It defaults to Conventional Commits (imperative subject, `type(scope): …`, bre
 - Picks an accurate Conventional Commit type and a sensible scope.
 - Writes an imperative subject within length limits, and a body explaining the *why* when the change isn't self-evident.
 - Notates breaking changes with `!` and a `BREAKING CHANGE:` footer.
-- Adds trailers: `Closes #123`, `Co-authored-by:`, `Signed-off-by:`, and the rest.
+- Adds issue references (`Closes #123`) — and, on request only, `Co-authored-by:`, `Signed-off-by:`, and the rest.
 - Tells you when staged changes should be split into separate commits, and gives you the commands to do it.
 - On request, chooses which unstaged files belong together as one coherent commit and gives you the exact staging and commit commands.
 - On request, writes a complete pull-request title and description — summary, what changed, testing, breaking changes — from the branch's diff against its base.
-- Keeps the first three modes read-only: it never stages, commits, pushes, or opens a PR, and never adds AI attribution.
+- Keeps the first three modes read-only: it never stages, commits, pushes, or opens a PR.
+- Adds no attribution trailers in any mode unless you ask for them — see [Attribution and trailers](#attribution-and-trailers).
 - Runs staging, committing, and pushing itself only when you explicitly ask for the autonomous mode.
 
 ## Works with
@@ -171,11 +172,67 @@ Use unambiguous wording when you want the agent to perform the operations itself
 
 The agent inspects the staged and unstaged hunks, selects one coherent change, stages only its specific paths, verifies the staged diff, commits with the quoted-heredoc form, and pushes the current branch to its upstream. It never uses `git add -A` or force-pushes. If the remote is ambiguous, existing staged work conflicts with a safe grouping, or the push is rejected, it stops and reports the exact state instead of guessing.
 
-AI attribution is prohibited in modes 1–3. It is permitted but optional in mode 4; human co-author, reviewer, sign-off, and other trailers must always be true.
+Mode 4 is an exception to the read-only rule and to nothing else. In particular it adds no attribution of its own — see [Attribution and trailers](#attribution-and-trailers).
 
 The autonomous mode is never inferred. Asking for a message or commands, saying "commit this," or approving commands with "go ahead" keeps the interaction read-only. Ask the agent explicitly to stage, commit, and push when you intend mode 4.
 
 The same conventions apply in Codex, Cursor, and Gemini. Codex and Cursor read this as a skill, just like Claude; Gemini reads `GEMINI.md`. Once the files are in place, ask for a commit command or explicitly request the autonomous workflow — the same mode boundary applies everywhere.
+
+## Attribution and trailers
+
+**The default is no attribution trailers at all.** No `Co-authored-by:`, no `Signed-off-by:`, no `Reviewed-by:`, and no AI or agent identity of any kind — not in commit messages, not in pull-request descriptions. A commit reads as your own work, authored by whatever `git config user.name` / `user.email` resolves to.
+
+The reason is that a trailer is an assertion: that a particular person collaborated on the change, or reviewed it, or is certifying its origin under a DCO. That claim belongs to you, not to a tool guessing on your behalf. A wrong one is worse than none — it puts a name in permanent history that doesn't belong there.
+
+**This applies to mode 4 too.** There is no autonomous-mode exception. Asking the agent to stage, commit, and push is a request to do the work, not a request to be credited for it, so an autonomous commit carries exactly the same trailers a mode-1 commit would.
+
+**Never inferred.** The skill does not inspect history, branch names, or the diff to decide that someone should be credited — there is no contributor-detection step. A repository whose every commit carries `Signed-off-by` still gets no sign-off: convention detection matches subject shape, scope vocabulary, and tense, and stops there. And a named human only ever comes from a value you supply — the skill will not invent a name or an email address.
+
+**Still included by default,** because neither is attribution:
+
+- `BREAKING CHANGE:` — required by the Conventional Commits grammar.
+- Issue references (`Refs: #123`, `Closes #123`) when you supply the issue, or when it's unambiguous from the branch name. It never guesses an issue number.
+
+### Asking for a trailer on one commit
+
+Say so in the session, in whatever words are natural:
+
+```
+> write the commit message and sign it off
+> commit this and add Sara Ahmadi <sara@example.com> as co-author
+> credit the agent on this one
+```
+
+You get the same message with the trailer block filled in:
+
+```bash
+git commit -F - <<'COMMIT_MSG'
+fix(serializers): handle null profile in user payload
+
+Co-authored-by: Sara Ahmadi <sara@example.com>
+Closes #517
+COMMIT_MSG
+```
+
+The request applies to that session's work, not to the repository — the next session starts from the default again.
+
+### Making it persistent
+
+For a standing preference, put it in the consuming repository's own agent context file — `AGENTS.md`, `CLAUDE.md`, or whatever your agent reads. The skill honours an instruction it finds there. One line is enough:
+
+```markdown
+Sign off every commit with `Signed-off-by:` using my git user.name and user.email.
+```
+
+That's the whole mechanism: an explicit ask in the session, or a standing line in your own context file. There is no config file and no flag to set.
+
+### Supported on request
+
+- `Co-authored-by:`
+- `Signed-off-by:`
+- `Reviewed-by:` (and the neighbouring `Acked-by:` / `Tested-by:`, `Reported-by:` / `Suggested-by:` / `Helped-by:`)
+- Issue-reference footers
+- AI or agent attribution, in whatever form you ask for
 
 ## Layout
 

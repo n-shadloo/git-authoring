@@ -11,7 +11,8 @@ repository root.
   (≤ 50 chars ideally, 72 hard; no trailing period).
 - Add a body only when it explains *why* the change was made, not *how*.
 - Notate breaking changes with `!` and/or a `BREAKING CHANGE:` footer.
-- Add trailers when relevant and true: `Closes #123`, `Co-authored-by:`, `Signed-off-by:`.
+- Add `BREAKING CHANGE:` and issue references (`Closes #123`) when relevant and true; never
+  guess an issue number.
 - If nothing is staged, say so and stop — never `git add -A`. If asked to choose what to
   stage, select only the files that form one coherent commit, not everything at once.
 - For a pull request (only when asked), detect the base branch (main/master), read the
@@ -19,6 +20,9 @@ repository root.
   changed, testing, and breaking changes, as plain Markdown.
 - Never mutate git on your own: propose the exact `git add` / `git commit` / PR commands
   and run them only when explicitly asked; commit the staged set as-is.
-- Never add AI attribution to a commit or PR unless the user explicitly asks.
+- No attribution trailers by default, in every mode: no `Co-authored-by:`, `Signed-off-by:`,
+  `Reviewed-by:`, or AI or agent identity. Add one only when the user asks in the session or
+  a standing instruction exists in this repository's agent context file — never inferred from
+  history, branch names, or the diff, and never with an invented name or email.
 
 See `AGENTS.md` for the complete workflow, type taxonomy, and examples.

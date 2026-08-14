@@ -82,28 +82,32 @@ move those values into the environment.
 
 ## Footers and trailers
 
-Footers follow the git trailer convention: `Token: value`, one per line, in a block after a blank line. Common tokens:
+Footers follow the git trailer convention: `Token: value`, one per line, in a block after a blank line. This is the catalogue of what the grammar allows, not a list of what to emit: **attribution trailers are off by default in every mode and are written only on request.**
 
-Issue and PR references
+Emitted by default when they apply — neither is attribution
 
+- `BREAKING CHANGE: …` — uppercase, as above; part of the grammar itself.
 - `Closes #123`, `Fixes #123`, `Resolves #123` — GitHub and GitLab close the issue when the commit merges into the default branch. (`close/closes/closed`, `fix/fixes/fixed`, and `resolve/resolves/resolved` all work; on a non-default branch the issue is referenced but not closed.)
 - `Refs #123` — references without closing.
 
-Attribution (recognised by GitHub and GitLab; co-authors appear in the contributors graph)
+Use an issue reference when the user supplies the issue, or when it is unambiguous from the branch name. Never guess a number.
+
+Available on request only — attribution (recognised by GitHub and GitLab; co-authors appear in the contributors graph)
 
 - `Co-authored-by: Full Name <email>` — a genuine collaborator on the change (pairing, mob, applying someone's patch).
 - `Reported-by:` / `Suggested-by:` / `Helped-by:` — credit for the report, the idea, or debugging help.
 - `Reviewed-by:` / `Acked-by:` / `Tested-by:` — review, agreement, and testing sign-off.
+- AI or agent attribution, in whatever form the user asks for.
 
-Sign-off
+Available on request only — sign-off
 
-- `Signed-off-by: Full Name <email>` — a Developer Certificate of Origin sign-off, required by projects such as the Linux kernel. Add `-s` to the quoted-heredoc commit command: `git commit -s -F - <<'COMMIT_MSG'`.
+- `Signed-off-by: Full Name <email>` — a Developer Certificate of Origin sign-off, required by projects such as the Linux kernel. When the user has asked for it, add `-s` to the quoted-heredoc commit command: `git commit -s -F - <<'COMMIT_MSG'`. A repo whose history is full of sign-offs is not itself the request — the DCO assertion is the committer's to make, not something to infer.
 
-Breaking change
+The opt-in
 
-- `BREAKING CHANGE: …` — uppercase, as above.
+An attribution trailer or sign-off is emitted only when the user asks in the session ("sign this off", "add Sam as co-author", "credit the agent"), or when a standing instruction exists in the consuming repo's own agent context file (`AGENTS.md`, `CLAUDE.md`, or equivalent). Never inferred from history, branch names, or the diff.
 
-Only add trailers that are true. An invented reviewer or co-author is worse than none.
+Only add trailers that are true, and take named humans only from values the user supplies — never invent a name or an email address. An invented reviewer or co-author is worse than none.
 
 ## Reverts
 
