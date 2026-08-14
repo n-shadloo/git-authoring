@@ -1,6 +1,6 @@
 # git-authoring
 
-A commit-, pull-request-, and release-note authoring skill for AI coding agents — built for Claude, and portable to Codex, Cursor, and Gemini CLI. It has five request-selected modes: generate an exact commit command for staged changes; choose one coherent set of files and generate staging plus commit commands; write a pull-request title and description; stage, commit, and push autonomously when explicitly told to do it all; or write the release note for a version from what actually landed since the last release.
+A commit-, pull-request-, release-note-, and PR-review authoring skill for AI coding agents — built for Claude, and portable to Codex, Cursor, and Gemini CLI. It has six request-selected modes: generate an exact commit command for staged changes; choose one coherent set of files and generate staging plus commit commands; write a pull-request title and description; stage, commit, and push autonomously when explicitly told to do it all; write the release note for a version from what actually landed since the last release; or review an incoming pull request and hand you the review comment or the squash-merge message to paste.
 
 ## Why
 
@@ -19,7 +19,8 @@ It defaults to Conventional Commits (imperative subject, `type(scope): …`, bre
 - On request, chooses which unstaged files belong together as one coherent commit and gives you the exact staging and commit commands.
 - On request, writes a complete pull-request title and description — summary, what changed, testing, breaking changes — from the branch's diff against its base.
 - On request, writes the release note for a version from the real range since the last release, in the style your project's previous releases already use.
-- Keeps every mode except the autonomous one read-only: it never stages, commits, pushes, opens a PR, tags, or publishes a release.
+- On request, reviews an incoming pull request with you — reads its diff, checks, and existing comments, separates what actually blocks a merge from what's only a suggestion, and hands you the review comment or the squash-merge message to paste.
+- Keeps every mode except the autonomous one read-only: it never stages, commits, pushes, opens a PR, tags, publishes a release, or approves, rejects, or merges a pull request.
 - Adds no attribution trailers in any mode unless you ask for them — see [Attribution and trailers](#attribution-and-trailers).
 - Runs staging, committing, and pushing itself only when you explicitly ask for the autonomous mode — and tags and publishes a release only on a further explicit ask.
 
@@ -108,7 +109,7 @@ The only requirement is `git` on your path and a Git repository to run in. [GitH
 
 ## Use
 
-The skill has one default and four on-request modes. All of them are read-only except the autonomous one: the agent inspects git and gives you commands or Markdown, but you run any operation yourself. Only mode 4 lets the agent mutate git.
+The skill has one default and five on-request modes. All of them are read-only except the autonomous one: the agent inspects git and gives you commands or Markdown, but you run any operation yourself. Only mode 4 lets the agent mutate git — and it never extends to GitHub review or merge actions.
 
 ### 1. Get a commit command for staged changes — the default
 
@@ -212,6 +213,25 @@ Two things it won't do. If the repository has no versioning at all — no versio
 
 Publishing is separate: the note lands in the conversation, and writing it to a file or cutting the actual GitHub release each take their own explicit ask (the latter via mode 4).
 
+### 6. Ask it to review an incoming pull request — on request
+
+This one is for the other side of the table: you're the maintainer, and someone else's branch is waiting on you.
+
+```
+> review PR 412 with me
+```
+
+It reads the PR through `gh` — the diff, the CI checks, the existing review threads, the linked issue, the commits and their authors, and your repo's merge method — then tells you what the branch does and, more usefully, sorts what it found into two buckets. **Blocking** means merging leaves you worse off than not merging: a broken build or test, data loss, a security hole, a broken contract, or a change that doesn't do what the PR says. **Everything else is a suggestion**, and a suggestion is never on its own a reason to hold up a merge.
+
+That distinction is calibrated to your project. A small repo with no stated convention and no CI has a high bar for blocking — missing tests in a project with no test suite isn't a blocker, and neither is ignoring a rule you never wrote down. It won't manufacture an objection to make the review look thorough, and when nothing blocks, that's the first line you read.
+
+Then you decide, and it writes exactly one Markdown block for the decision you made:
+
+- **Something blocks it** — a review comment, verdict first, blocking items separated from optional ones, pointing at code and locations rather than at the contributor.
+- **You're accepting** — the merge-commit message. On a squash merge this matters more than it looks: GitHub prefills the body with every branch commit concatenated together, and that's the commit that lands on your default branch and lives in `git log` forever. It gets written fresh from the diff instead, and `Co-authored-by:` lines are carried across from the branch's real commits so a squash doesn't erase a second contributor's credit.
+
+You paste it into GitHub and click the button. The agent never approves, requests changes, comments, or merges — and "approve it" or "yes, merge" tells it what the block should say, not to run it. The autonomous mode doesn't extend here: mode 4 stages, commits, and pushes *your* work, never lands someone else's.
+
 The same conventions apply in Codex, Cursor, and Gemini. Codex and Cursor read this as a skill, just like Claude; Gemini reads `GEMINI.md`. Once the files are in place, ask for a commit command, a release note, or explicitly request the autonomous workflow — the same mode boundary applies everywhere.
 
 ## Attribution and trailers
@@ -221,6 +241,8 @@ The same conventions apply in Codex, Cursor, and Gemini. Codex and Cursor read t
 The reason is that a trailer is an assertion: that a particular person collaborated on the change, or reviewed it, or is certifying its origin under a DCO. That claim belongs to you, not to a tool guessing on your behalf. A wrong one is worse than none — it puts a name in permanent history that doesn't belong there.
 
 **This applies to mode 4 too.** There is no autonomous-mode exception. Asking the agent to stage, commit, and push is a request to do the work, not a request to be credited for it, so an autonomous commit carries exactly the same trailers a mode-1 commit would.
+
+**One exception, and only one.** When you squash-merge someone's pull request in mode 6, `Co-authored-by:` lines are carried across from the branch's real commits without you asking. A squash collapses every commit into one and credits only the PR author, so transcribing them preserves authorship that already exists rather than asserting anything new — every name and address comes from an actual commit.
 
 **Never inferred.** The skill does not inspect history, branch names, or the diff to decide that someone should be credited — there is no contributor-detection step. A repository whose every commit carries `Signed-off-by` still gets no sign-off: convention detection matches subject shape, scope vocabulary, and tense, and stops there. And a named human only ever comes from a value you supply — the skill will not invent a name or an email address.
 
@@ -274,7 +296,7 @@ That's the whole mechanism: an explicit ask in the session, or a standing line i
 
 ```
 git-authoring/
-├── SKILL.md                          # skill: workflow, commit + PR + release authoring
+├── SKILL.md                          # skill: commit, PR, release, and review authoring
 ├── AGENTS.md                         # always-on layer; source for the pointers below
 ├── GEMINI.md                         # Gemini CLI
 ├── .cursor/
@@ -286,7 +308,8 @@ git-authoring/
 │   ├── craft.md                      # writing subjects and bodies well
 │   ├── scopes-and-repos.md           # scopes; matching a repo's style
 │   ├── pull-requests.md              # PR titles and descriptions
-│   └── release-notes.md              # release notes; tagging and publishing
+│   ├── release-notes.md              # release notes; tagging and publishing
+│   └── pr-review.md                  # reviewing and landing incoming PRs
 ├── README.md
 └── LICENSE
 ```

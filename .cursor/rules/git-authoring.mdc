@@ -1,10 +1,10 @@
 ---
-description: Conventional Commit, pull-request, and release-note conventions for this repository
+description: Conventional Commit, pull-request, release-note, and PR-review conventions for this repository
 alwaysApply: true
 ---
 
-When writing a git commit message, a pull request, or a release note, follow `AGENTS.md`
-at the repository root.
+When writing a git commit message, a pull request, or a release note, or reviewing someone
+else's pull request, follow `AGENTS.md` at the repository root.
 
 - Read `git diff --staged` — the staged diff is the source of truth, not filenames.
 - Choose an accurate Conventional Commit type and scope; write an imperative subject
@@ -24,13 +24,26 @@ at the repository root.
   group entries by user-visible effect; match the style of prior releases over any
   template; drop empty sections rather than writing "None". If the repository has no
   versioning at all, say so and stop — never create its first tag unprompted.
+- For a review of someone else's pull request (only when asked), read it through `gh` —
+  diff, checks, existing threads, commits and their authors, merge method — and separate
+  what actually blocks the merge (breaks the build or a test, loses data, opens a security
+  hole, breaks a documented contract, or doesn't do what the PR claims) from what is only
+  a suggestion. Calibrate the bar to the project; never manufacture a blocker; when nothing
+  blocks, say so in one plain line first. On a fork PR, empty `gh pr checks` output means
+  the workflows have not run, not that they passed. Write one Markdown block for the
+  decision made — the review comment, or the merge-commit message.
 - Never mutate git on your own: propose the exact `git add` / `git commit` / PR commands
   and run them only when explicitly asked; commit the staged set as-is. Tagging and
   publishing a release take the autonomous mode *and* an explicit request to publish —
   never overwrite or move an existing tag or release.
+- The autonomous mode never extends to a review: "approve it" or "yes, merge" tells you
+  what the block should say, not to run it — never run `gh pr review`, `gh pr comment`,
+  `gh pr merge`, or `gh pr close`.
 - No attribution trailers by default, in every mode: no `Co-authored-by:`, `Signed-off-by:`,
   `Reviewed-by:`, or AI or agent identity. Add one only when the user asks in the session or
   a standing instruction exists in this repository's agent context file — never inferred from
-  history, branch names, or the diff, and never with an invented name or email.
+  history, branch names, or the diff, and never with an invented name or email. One exception:
+  in a squash-merge message, transcribe `Co-authored-by:` lines from the branch's real commit
+  metadata, since the squash would otherwise destroy authorship that already exists.
 
 See `AGENTS.md` for the complete workflow, type taxonomy, and examples.
