@@ -1,0 +1,82 @@
+name: Docs integrity
+
+on: [push, pull_request]
+
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Check reference links, orphans, fences, and SKILL.md size
+        run: |
+          python - <<'PY'
+          import re
+          import sys
+          from pathlib import Path
+
+          SKILL = Path("SKILL.md")
+          REFS = Path("references")
+          SIZE_LIMIT = 40960
+          LINK = re.compile(r"references/[A-Za-z0-9._-]+\.md")
+
+          errors = []
+
+          reference_files = sorted(REFS.glob("*.md"))
+          citing_files = [SKILL] + reference_files
+
+          # 1. Every references/<name>.md path mentioned must exist on disk.
+          cited = {}
+          for source in citing_files:
+              text = source.read_text(encoding="utf-8")
+              for target in sorted(set(LINK.findall(text))):
+                  cited.setdefault(target, []).append(source.as_posix())
+                  if not Path(target).exists():
+                      errors.append(
+                          f"{source.as_posix()}: links to {target}, which does not exist"
+                      )
+
+          # 2. Every reference file must be cited by SKILL.md or another reference file.
+          for path in reference_files:
+              target = path.as_posix()
+              sources = [s for s in cited.get(target, []) if s != target]
+              if not sources:
+                  errors.append(
+                      f"{target}: orphaned, no link to it from SKILL.md or any other reference file"
+                  )
+
+          # 3. Code fences must be balanced in every Markdown file.
+          for path in sorted(p for p in Path(".").rglob("*.md") if ".git" not in p.parts):
+              fences = [
+                  n
+                  for n, line in enumerate(
+                      path.read_text(encoding="utf-8").splitlines(), start=1
+                  )
+                  if line.startswith("```")
+              ]
+              if len(fences) % 2:
+                  errors.append(
+                      f"{path.as_posix()}: {len(fences)} code fence lines, expected an even "
+                      f"number (unclosed fence at line {fences[-1]})"
+                  )
+
+          # 4. SKILL.md must stay under the context-budget ceiling.
+          size = SKILL.stat().st_size
+          if size > SIZE_LIMIT:
+              errors.append(
+                  f"{SKILL.as_posix()}: {size} bytes, exceeds the {SIZE_LIMIT}-byte limit "
+                  f"by {size - SIZE_LIMIT}"
+              )
+
+          if errors:
+              for error in errors:
+                  print(f"FAIL: {error}", file=sys.stderr)
+              sys.exit(f"{len(errors)} docs integrity problem(s) found")
+
+          print(
+              f"OK: {len(reference_files)} reference files, {len(cited)} links resolve, "
+              f"fences balanced, SKILL.md {size}/{SIZE_LIMIT} bytes"
+          )
+          PY
