@@ -1,8 +1,29 @@
 ---
 name: git-authoring
-description: Authors Conventional Commits messages, pull-request content, and release notes from real git changes, reviews an incoming pull request for the maintainer, or runs the stage-commit-push workflow when told to. Six modes: commit command for staged changes; file selection plus commands; pull-request title and description; autonomous stage, commit, and push; a version's release note; and a review comment or squash-merge message to paste. Use whenever the user is about to commit, asks for a commit message or command, mentions writing or improving a commit, refers to staged changes, asks which files belong in a commit, asks for a pull-request title or description, asks for release notes or a changelog entry, asks the agent to stage, commit, and push, or asks for help reviewing, approving, rejecting, or merging someone else's pull request. Do not trigger for unrelated git work such as branching, rebasing, or resolving merge conflicts unless a commit, pull request, review, or release note is being written.
+description: >-
+  Authors Conventional Commits messages, pull-request content, and release
+  notes from real git changes, reviews an incoming pull request for the
+  maintainer, or runs the stage-commit-push workflow when told to. Six
+  modes: commit command for staged changes; file selection plus commands;
+  pull-request title and description; autonomous stage, commit, and push; a
+  version's release note; and a review comment or squash-merge message to
+  paste. Use whenever the user is about to commit, asks for a commit message
+  or command, mentions writing or improving a commit, refers to staged
+  changes, asks which files belong in a commit, asks for a pull-request
+  title or description, asks for release notes or a changelog entry, asks
+  the agent to stage, commit, and push, or asks for help reviewing,
+  approving, rejecting, or merging someone else's pull request. Do not
+  trigger for unrelated git work such as branching, rebasing, or resolving
+  merge conflicts unless a commit, pull request, review, or release note is
+  being written.
 license: MIT
-compatibility: Requires git and a Git repository. Language-agnostic; no runtime dependencies beyond git. Pull-request and release-note output is plain Markdown, so GitHub CLI is optional for modes 1–5 — there it only detects prior release style and, on explicit request in mode 4, publishes a release. Mode 6 requires an authenticated `gh` to read the pull request, but still only reads: it writes Markdown for the user to paste.
+compatibility: >-
+  Requires git and a Git repository. Language-agnostic; no runtime
+  dependencies beyond git. Pull-request and release-note output is plain
+  Markdown, so GitHub CLI is optional for modes 1–5 — there it only detects
+  prior release style and, on explicit request in mode 4, publishes a
+  release. Mode 6 requires an authenticated `gh` to read the pull request,
+  but still only reads: it writes Markdown for the user to paste.
 metadata:
   author: n-shadloo
   version: "2.4.0"
