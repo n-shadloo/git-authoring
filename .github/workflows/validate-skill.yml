@@ -1,0 +1,52 @@
+name: Validate skill
+
+on: [push, pull_request]
+
+jobs:
+  frontmatter:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pyyaml
+      - name: Validate SKILL.md frontmatter
+        run: |
+          python - <<'PY'
+          import sys
+          import yaml
+
+          text = open("SKILL.md", encoding="utf-8").read()
+          if not text.startswith("---\n"):
+              sys.exit("SKILL.md does not start with a '---' frontmatter delimiter")
+          body = text[4:]
+          if "\n---\n" not in body:
+              sys.exit("SKILL.md frontmatter is not closed by a '---' line")
+          raw = body.split("\n---\n", 1)[0]
+
+          try:
+              data = yaml.safe_load(raw)
+          except yaml.YAMLError as exc:
+              sys.exit(f"SKILL.md frontmatter is not valid YAML:\n{exc}")
+
+          if not isinstance(data, dict):
+              sys.exit(f"SKILL.md frontmatter parsed as {type(data).__name__}, expected a mapping")
+
+          for key in ("name", "description"):
+              if key not in data:
+                  sys.exit(f"SKILL.md frontmatter is missing '{key}'")
+
+          if data["name"] != "git-authoring":
+              sys.exit(f"name is {data['name']!r}, expected 'git-authoring'")
+
+          description = data["description"]
+          if not isinstance(description, str):
+              sys.exit(f"description is {type(description).__name__}, expected a string")
+          if not description.strip():
+              sys.exit("description is empty")
+          if len(description) >= 1024:
+              sys.exit(f"description is {len(description)} characters, must be under 1024")
+
+          print(f"OK: name={data['name']}, description={len(description)} characters")
+          PY
