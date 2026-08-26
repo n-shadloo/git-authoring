@@ -1,6 +1,6 @@
 # git-authoring
 
-A commit-, pull-request-, release-note-, and PR-review authoring skill for AI coding agents — built for Claude, and portable to Codex, Cursor, and Gemini CLI. It has six request-selected modes: generate an exact commit command for staged changes; choose one coherent set of files and generate staging plus commit commands; write a pull-request title and description; stage, commit, and push autonomously when explicitly told to do it all; write the release note for a version from what actually landed since the last release; or review an incoming pull request and hand you the review comment or the squash-merge message to paste.
+A full git skill for AI coding agents — built for Claude, and portable to Codex, Cursor, and Gemini CLI. It has seven request-selected modes: generate an exact commit command for staged changes; choose one coherent set of files and generate staging plus commit commands; write a pull-request title and description; stage, commit, and push autonomously when explicitly told to do it all; write the release note for a version from what actually landed since the last release; review an incoming pull request and hand you the review comment or the squash-merge message to paste; or work the repository itself — branches, rebases, squashes, cherry-picks, reverts, conflicts, stashes, and recovery through the reflog.
 
 ## Why
 
@@ -20,6 +20,7 @@ It defaults to Conventional Commits (imperative subject, `type(scope): …`, bre
 - On request, writes a complete pull-request title and description — summary, what changed, testing, breaking changes — from the branch's diff against its base.
 - On request, writes the release note for a version from the real range since the last release, in the style your project's previous releases already use.
 - On request, reviews an incoming pull request with you — reads its diff, checks, and existing comments, separates what actually blocks a merge from what's only a suggestion, and hands you the review comment or the squash-merge message to paste.
+- On request, works the repository itself — branching, merging and rebasing, squashing and splitting commits, cherry-picking, reverting and resetting, stashing, worktrees, resolving merge conflicts, and recovering lost work through the reflog — by reading the real state and giving you the exact commands.
 - Keeps every mode except the autonomous one read-only: it never stages, commits, pushes, opens a PR, tags, publishes a release, or approves, rejects, or merges a pull request.
 - Adds no attribution trailers in any mode unless you ask for them — see [Attribution and trailers](#attribution-and-trailers).
 - Runs staging, committing, and pushing itself only when you explicitly ask for the autonomous mode — and tags and publishes a release only on a further explicit ask.
@@ -172,7 +173,13 @@ Use unambiguous wording when you want the agent to perform the operations itself
 > stage, commit, and push this for me — do it all yourself
 ```
 
-The agent inspects the staged and unstaged hunks, selects one coherent change, stages only its specific paths, verifies the staged diff, commits with the quoted-heredoc form, and pushes the current branch to its upstream. It never uses `git add -A` or force-pushes. If the remote is ambiguous, existing staged work conflicts with a safe grouping, or the push is rejected, it stops and reports the exact state instead of guessing.
+The agent inspects the staged and unstaged hunks, selects one coherent change, stages only its specific paths, verifies the staged diff, commits with the quoted-heredoc form, and pushes the current branch to its upstream. It never uses `git add -A` and it never force-pushes. It never passes `--no-verify` either: a hook that fails is a finding it reports, not an obstacle it removes. It treats work in the repository it did not create as yours — it inspects that work, never sweeps it into a commit, and never rewrites it.
+
+Five conditions stop it: a rejected push, an ambiguous remote or upstream, staged work that will not group into one commit, a tag or release that already exists, and a hook that fails. A rejected push means someone else moved the branch. The agent fetches, reads the divergence, and reports the exact commits on each side. It never rebases or merges that divergence for you.
+
+Every stop hands the work back with the same five things. The goal, and the exact blocked step. What it attempted, and the git output, verbatim. The causes it eliminated, and how. The one decision it needs from you. The state that remains, and whether it is safe to leave.
+
+It claims completion only from `git log -1 --format=full` and `git status`. It runs both after the push, and it shows you the output. A claim without that output is not a completion.
 
 On a further explicit ask, mode 4 will also tag and publish a GitHub release. It checks that `gh` is installed and authenticated first, and falls back to handing you the note as Markdown if either check fails. It never overwrites or moves an existing tag or release, never uses `--force`, and never deletes either — if the version is already tagged or released, it stops and tells you.
 
@@ -232,6 +239,24 @@ Then you decide, and it writes exactly one Markdown block for the decision you m
 
 You paste it into GitHub and click the button. The agent never approves, requests changes, comments, or merges — and "approve it" or "yes, merge" tells it what the block should say, not to run it. The autonomous mode doesn't extend here: mode 4 stages, commits, and pushes *your* work, never lands someone else's.
 
+### 7. Ask it about the repository itself — on request
+
+Anything git does that isn't a message: branches, integration, history editing, undo, moving work, conflicts, recovery.
+
+```
+> this rebase is stuck and I don't know which side is mine
+> squash these four commits before I open the PR
+> I reset --hard and lost an hour of work
+```
+
+It reads the real state first — status, graph, branches, and the divergence from the upstream when a remote matters — tells you what git is actually reporting, and then gives you the commands. Before anything that can lose work it names the reflog entry or branch that gets it back.
+
+The limits are absolute. It won't rewrite published history on a shared branch. It won't force-push — where you ask it to update your *own* pushed branch after a rebase it uses `--force-with-lease`, which refuses if the remote moved since your last fetch, so someone else's commit can't be silently overwritten. It won't discard uncommitted work without you confirming. It won't resolve a conflict by picking a side to make the sequence continue — it reads both sides, decides from what each change was for, and tells you what it decided and why. And it never leaves a rebase, merge, cherry-pick, or bisect half-finished without telling you the state and the command that ends it.
+
+One thing worth knowing, because it's the most common way conflict work goes wrong: `ours` and `theirs` swap between a merge and a rebase. In a rebase your own commit arrives as "theirs". The skill reads which operation is in progress rather than assuming.
+
+Like modes 1–3, 5, and 6, this is read-only by default — you get the commands and run them. It executes only under the same explicit autonomous request mode 4 needs.
+
 The same conventions apply in Codex, Cursor, and Gemini. Codex and Cursor read this as a skill, just like Claude; Gemini reads `GEMINI.md`. Once the files are in place, ask for a commit command, a release note, or explicitly request the autonomous workflow — the same mode boundary applies everywhere.
 
 ## Attribution and trailers
@@ -244,7 +269,9 @@ The reason is that a trailer is an assertion: that a particular person collabora
 
 **One exception, and only one.** When you squash-merge someone's pull request in mode 6, `Co-authored-by:` lines are carried across from the branch's real commits without you asking. A squash collapses every commit into one and credits only the PR author, so transcribing them preserves authorship that already exists rather than asserting anything new — every name and address comes from an actual commit.
 
-**Never inferred.** The skill does not inspect history, branch names, or the diff to decide that someone should be credited — there is no contributor-detection step. A repository whose every commit carries `Signed-off-by` still gets no sign-off: convention detection matches subject shape, scope vocabulary, and tense, and stops there. And a named human only ever comes from a value you supply — the skill will not invent a name or an email address.
+**Never inferred, and the sources are named.** A trailer has exactly two legitimate sources: your words in the session, and the squash transcription above. Everything else is forbidden by name — the agent's own identity, the model or tool name, `commit.template`, a `prepare-commit-msg` or `commit-msg` hook, `GIT_AUTHOR_*` and `GIT_COMMITTER_*`, CI variables, editor plugins, and the trailers on your existing commits. A repository whose every commit carries `Signed-off-by` still gets no sign-off. A template or hook that injects a line is treated as a finding: the line is stripped and you're told which file produced it. The author identity is never set either — no `--author`, no `-c user.name`, no writes to git config.
+
+**And it's checked, not just stated.** After every commit the agent makes itself it reads `git log -1 --format=full`, and if an unrequested attribution line is there it amends it out at once and reads again to confirm. The same check runs across every commit a push would publish, and a hit stops the push. A commit isn't reported as done until the check passes.
 
 **Still included by default,** because neither is attribution:
 
@@ -309,7 +336,9 @@ git-authoring/
 │   ├── scopes-and-repos.md           # scopes; matching a repo's style
 │   ├── pull-requests.md              # PR titles and descriptions
 │   ├── release-notes.md              # release notes; tagging and publishing
-│   └── pr-review.md                  # reviewing and landing incoming PRs
+│   ├── pr-review.md                  # reviewing and landing incoming PRs
+│   ├── branching-and-history.md      # branches, rebase, undo, recovery
+│   └── conflicts.md                  # merge/rebase conflict resolution
 ├── README.md
 └── LICENSE
 ```

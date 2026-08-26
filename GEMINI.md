@@ -14,13 +14,29 @@ repository root. Follow it in full and choose the mode from the user's request:
 6. When asked to review an incoming pull request, read it through `gh`, work the decision
    through with the user, and write the review comment or the merge-commit message as a
    Markdown block for them to paste. Never approve, request changes, comment, or merge.
+7. When asked for repository work — branches, merges and rebases, history editing, undo,
+   moving work, conflict resolution, recovery — read the real state, say what the situation
+   is, and present the exact commands.
 
-Modes 1–3, 5, and 6 are always read-only, even after a follow-up confirmation. Mode 4 is
-the sole execution exception; it is an exception to the read-only rule and to nothing else.
+Modes 1–3 and 5–7 are always read-only, even after a follow-up confirmation. Mode 4 is
+the sole execution exception, and mode 7 executes only under that same explicit request; it
+is an exception to the read-only rule and to nothing else.
 Never infer mode 4 from "commit this," "go ahead," or a request for commands. Never infer
 publishing from a release note or approval of one — it takes mode 4 *and* an explicit
 request to publish. Never use `git add -A`, force-push, or overwrite an existing tag or
-release.
+release. Never pass `--no-verify`, and never disable a hook, to make a commit or a push
+succeed. A hook that fails is a finding, and it stops the work.
+
+Work in the repository that this agent did not create is another writer's state. Inspect it,
+never sweep it into a commit, and never rewrite it. A rejected push means another writer
+moved the branch: fetch, read the divergence, and report the exact commits on each side.
+Never rebase or merge that divergence on your own — the resolution is the user's decision.
+
+Every stop hands the work back with five fields. The goal, and the exact blocked step. What
+you attempted, and the git output, verbatim. The causes you eliminated, and how. The one
+decision needed from the user. The state that remains, and whether it is safe to leave. Mode
+4 claims completion only from `git log -1 --format=full` and `git status`. Run both after the
+push. A claim without that output is not a completion.
 
 Mode 4 does not extend to mode 6. Deciding to approve, reject, or merge someone else's pull
 request always produces text the user pastes, never an action the agent takes — "approve
@@ -40,9 +56,25 @@ from `HEAD`, and report any disagreement with the project's version field rather
 silently picking one. If the repository has no versioning at all, say so and stop rather
 than creating its first tag. Match the style of prior releases over any template.
 
+In repository work, never rewrite published history on a shared branch, never force-push —
+where the user asks to update their own pushed branch after a rebase, use
+`--force-with-lease` — never discard uncommitted work without explicit confirmation, never
+resolve a conflict by choosing a side to end it, and never leave a rebase, merge,
+cherry-pick, or bisect part-way through without naming the state and the command that ends
+it. Before any command that can lose work, state the reflog entry that recovers it.
+
 No attribution trailers by default, in every mode including mode 4: no `Co-authored-by:`,
 `Signed-off-by:`, `Reviewed-by:`, or AI or agent identity, in commits or in pull-request
-descriptions. `BREAKING CHANGE:` and issue references stay available. Add an attribution
+descriptions. A trailer has exactly two sources: the user's words in this session, and the
+mode 6 squash transcription. Never take one from the agent's own identity, the model or tool
+name, `commit.template`, a `prepare-commit-msg` or `commit-msg` hook, `GIT_AUTHOR_*` or
+`GIT_COMMITTER_*`, a CI variable, an editor plugin, or the trailers on prior commits — a
+history full of them gives no permission. Never pass `--author`, `-c user.name`, or
+`-c user.email`, and never write to git config. A template or hook that injects a trailer is
+a finding: strip the line and name the file. After every commit you make, read
+`git log -1 --format=full`; if an unrequested attribution line is there, amend it out at once
+and read it again. Run the same check with `git log --format=full @{u}..HEAD` before a push,
+and stop the push on any commit that carries one. `BREAKING CHANGE:` and issue references stay available. Add an attribution
 trailer only when the user asks in the session or a standing instruction exists in this
 repository's agent context file — never inferred from history, branch names, or the diff,
 and never with an invented name or email. One exception: when writing the message for a
