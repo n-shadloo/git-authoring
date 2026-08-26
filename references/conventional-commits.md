@@ -105,7 +105,17 @@ Available on request only — sign-off
 
 The opt-in
 
-An attribution trailer or sign-off is emitted only when the user asks in the session ("sign this off", "add Sam as co-author", "credit the agent"), or when a standing instruction exists in the consuming repo's own agent context file (`AGENTS.md`, `CLAUDE.md`, or equivalent). Never inferred from history, branch names, or the diff.
+An attribution trailer or sign-off is emitted only when the user asks in the session ("sign this off", "add Sam as co-author", "credit the agent"), or when a standing instruction exists in the consuming repo's own agent context file (`AGENTS.md`, `CLAUDE.md`, or equivalent).
+
+**A trailer has exactly two sources: the user's words in this session, and the mode 6 squash transcription.** NEVER take one from anywhere else. These are the forbidden sources, named because each one looks like permission and is not:
+
+- The agent's own identity, and the model or the tool name.
+- `commit.template`, and a `prepare-commit-msg` or `commit-msg` hook. A template or a hook that injects a trailer is a finding: strip the line, name the file that produced it, and NEVER keep it silently.
+- `GIT_AUTHOR_NAME`, `GIT_AUTHOR_EMAIL`, `GIT_COMMITTER_NAME`, `GIT_COMMITTER_EMAIL`, and any CI variable.
+- An editor plugin.
+- The trailers on prior commits in this repository. Convention detection covers subject shape, scope vocabulary, and tense — never trailers. A history full of AI or `Co-authored-by:` lines gives no permission to add one.
+
+**The author identity is never set.** NEVER pass `--author`. NEVER pass `-c user.name` or `-c user.email`. NEVER write to git config. The author is whatever the repository already resolves to.
 
 Only add trailers that are true, and take named humans only from values the user supplies — never invent a name or an email address. An invented reviewer or co-author is worse than none.
 
