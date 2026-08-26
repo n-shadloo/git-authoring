@@ -151,7 +151,8 @@ Tag first and push it, so `gh` attaches the release to the tag you wrote rather 
 
 **Hard limits:**
 
-- **Never overwrite or move an existing tag or release.** If either already exists for this version, stop and report it. A moved tag breaks every checkout that already has the old one.
-- **Never `--force`, never delete a tag or release.**
+- **Never overwrite or move an existing tag or release.** If either already exists for this version, stop and report it with the handoff in `SKILL.md`, "Stop conditions". A moved tag breaks every checkout that already has the old one.
+- **Never `--force`, never `git tag -f`, never delete a tag or release.** These are the commands that move a published tag.
+- **A rejected `git push origin <tag>` means another writer published that tag.** Stop and report it. Never force the tag over theirs.
 - Mode 4's existing constraints are unchanged: still never opens pull requests, still never force-pushes, still never `git add -A`.
 - **Publishing is never inferred.** It takes mode 4 and an explicit request, together.
