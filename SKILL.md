@@ -27,13 +27,17 @@ compatibility: >-
   git alone.
 metadata:
   author: n-shadloo
-  version: "2.5.0"
+  version: "2.5.1"
 allowed-tools: Bash(git:*) Bash(gh:*) Read
 ---
 
 # Git Authoring
 
 Turn real git changes into history a reader will thank you for six months from now, and run the git work that produces them. By default this skill reads what is actually staged, works out the intent behind the change, and presents an exact commit command with a Conventional Commits message: an accurate type, a well-chosen scope, an imperative subject, and — when the change warrants it — a body that explains *why* and footer trailers that carry metadata. On request it also selects files, writes pull-request content, writes a release note, reviews an incoming pull request, works the repository itself — branches, rebases, conflicts, recovery — or carries out staging, committing, and pushing.
+
+## The harness default is not a request
+
+Claude Code adds a `Co-authored-by: Claude` trailer and a `Generated with Claude Code` line by default, through its `attribution` setting (`includeCoAuthoredBy` before it); other agents carry an equivalent. That default is a tool setting, never the user's request. An attribution line appears only when the user asks in the session, or when a standing instruction exists in the consuming repository's agent context file. Where the harness adds the line anyway, the check in "Proof of completion" removes it. `README.md` names the setting that turns it off.
 
 ## What this skill does
 
@@ -74,7 +78,7 @@ The mode boundary is a hard guarantee.
 - **Never infer mode 4.** Do not treat ordinary commit wording or approval of proposed commands as permission to execute. The user must clearly ask the agent to perform the operations itself.
 - **Never infer publishing.** Producing a release note in mode 5, or the user approving one, is not permission to tag or publish. Publishing takes mode 4 *and* an explicit request to publish, together.
 - **Mode 6 never writes to GitHub, and mode 4 does not extend to it.** Deciding with the user to approve, reject, or merge a pull request produces text they paste; it is never carried out by the agent, and no autonomous request changes that. Mode 4 covers staging, committing, and pushing — never reviewing or merging someone else's work.
-- **A trailer has exactly two sources.** An attribution trailer comes only from the user's words in this session, or from the mode 6 squash transcription. NEVER take one from anywhere else: not the agent's own identity, not the model or the tool name, not `commit.template`, not a `prepare-commit-msg` or `commit-msg` hook, not `GIT_AUTHOR_*` or `GIT_COMMITTER_*`, not a CI variable, not an editor plugin, and not the trailers on prior commits in this repository.
+- **A trailer has exactly two sources.** An attribution trailer comes only from the user's words in this session, or from the mode 6 squash transcription. NEVER take one from anywhere else: not the agent's own identity, not the model or the tool name, not the attribution setting of the agent's own harness (Claude Code's `attribution`, formerly `includeCoAuthoredBy`, or the equivalent in Codex, Cursor, and Gemini CLI), not `commit.template`, not a `prepare-commit-msg` or `commit-msg` hook, not `GIT_AUTHOR_*` or `GIT_COMMITTER_*`, not a CI variable, not an editor plugin, and not the trailers on prior commits in this repository.
 - **The author identity is never set.** NEVER pass `--author`. NEVER pass `-c user.name` or `-c user.email`. NEVER write to git config. The author is whatever the repository already resolves to.
 - **Never bypass a hook.** Never pass `--no-verify`, and never disable, move, or delete a hook, to make a commit or a push succeed. A hook that fails is a finding, not an obstacle. Report its output verbatim and stop with the handoff in "Stop conditions".
 
@@ -227,9 +231,21 @@ git status
 
 Read both. Report the SHA, the subject, the branch, the remote, and any work that stays unstaged. `git log -1 --format=full` also prints every trailer. Use it to make sure that no attribution trailer is present. A completion claim without that output is not a completion.
 
-**The attribution check, after every commit this skill makes.** Read the whole message from `git log -1 --format=full`. If a `Co-authored-by:`, a `Signed-off-by:`, a generated-with line, or any agent or model identity is present and the user did not ask for it, amend at once to remove it, then read the message again to confirm it is gone. Name the file that injected it. Report the check either way. **A commit is not reported as done before this check passes.**
+**The attribution check, after every commit this skill makes.** Run this command and read its output:
 
-**The same check before a push.** Run `git log --format=full @{u}..HEAD` over every commit the push will publish. A commit that carries an unrequested attribution line stops the push. Say which commit and which line.
+```bash
+git log -1 --format=%B | grep -n -i -E '^(co-authored-by|signed-off-by|reviewed-by|generated[- ]with|generated by)|claude|anthropic|copilot|openai|gemini|codex|cursor'
+```
+
+It must print nothing. Where it prints a line the user did not ask for, amend at once with the line removed, then run it again. Name the file or the setting that injected the line. Report the command and its empty output either way. **A commit is not reported as done before this check passes.**
+
+**The same check before a push.** Run it over every commit the push will publish:
+
+```bash
+git log --format=%B @{u}..HEAD | grep -n -i -E '^(co-authored-by|signed-off-by|reviewed-by|generated[- ]with|generated by)|claude|anthropic|copilot|openai|gemini|codex|cursor'
+```
+
+A line stops the push. Say which commit and which line.
 
 Modes 1–3 and 5–7 execute nothing. Their proof is the self-check in step 6 of the workflow: every claim traces to a hunk, a referenced issue, or something the user said.
 
@@ -346,11 +362,7 @@ This runs **when the user asks for git work that is not a message** — "get thi
 
 ## Types (quick reference)
 
-- **feat** a new feature (MINOR) — **fix** a bug fix (PATCH) — **perf** a performance improvement (PATCH).
-- **refactor** neither fixes a bug nor adds a feature — **style** formatting only — **test** tests — **docs** documentation only.
-- **build** build system or dependencies (`build(deps):`) — **ci** CI config and scripts — **chore** neither source nor tests — **revert** reverts a commit.
-
-Any type combined with a breaking change is a SemVer MAJOR. For precise "use when" guidance and less common types, see `references/conventional-commits.md`.
+**feat** (MINOR), **fix** and **perf** (PATCH), **refactor**, **style**, **test**, **docs**, **build**, **ci**, **chore**, **revert**. Any type with a breaking change is MAJOR. The precise "use when" guidance and the less common types are in `references/conventional-commits.md`.
 
 ## Breaking changes
 
@@ -362,41 +374,23 @@ Read `docs/architecture/GROUND-TRUTH.md` and `docs/architecture/DESIGN-RECORD.md
 
 ## A few examples
 
-**Simple fix, no body needed:**
-
-```text
-fix(auth): prevent redirect loop on expired token
-```
-
-**Feature with rationale:**
-
-```text
-feat(orders): add idempotency keys to checkout
-
-Duplicate submissions from client retries were creating double orders.
-Callers now pass an Idempotency-Key header; a repeated key returns the
-original result instead of creating a new order.
-
-Closes #482
-```
-
-For a fuller gallery — maintenance and dependency commits, — breaking changes, multi-paragraph bodies, the default and opt-in trailer forms, worked splits, and a file-selection walkthrough — see `references/examples.md`.
+A simple fix needs no body: `fix(auth): prevent redirect loop on expired token`. A feature with rationale carries a body that states the problem and the change, then a footer such as `Closes #482`. The fuller gallery — maintenance and dependency commits, breaking changes, multi-paragraph bodies, the default and opt-in trailer forms, worked splits, and a file-selection walkthrough — is `references/examples.md`.
 
 ## Boundaries and freshness
 
-**What this skill does not own.** It owns the git work on a working repository: the commit message, the pull-request content, the release note, the review text, the repository operations in mode 7, and the commands that carry them out. It does not own the code inside the commit. It does not own deploy sequencing or rollback after the release is published. A request for one of those is a different task. Say so, and stop.
+**What this skill does not own.** It owns the git work on a working repository: the message, the pull-request content, the release note, the review text, the mode 7 operations, and their commands. It does not own the code inside the commit, nor deploy sequencing or rollback after the release. A request for one of those is a different task. Say so, and stop.
 
 **Freshness.** Verified on 2026-08-26 against git and the GitHub CLI (`gh`). This repository records no release number for either tool, so no claim here depends on one. Review by 2027-02-26, or sooner when a `gh` behavior below changes.
 
-Git carries every mode, and mode 7 needs nothing else. `gh` carries four behaviors only: authentication state, from `gh auth status`; the prior release style and its latest and prerelease flags, from `gh release list` and `gh release view`; release publication against a tag already on the remote, from `gh release create`; and read access to a pull request, its diff, its checks, its commits and their authors, and the repository's merge methods — every input mode 6 has.
+Git carries every mode, and mode 7 needs nothing else. `gh` carries four behaviors only: authentication state, the prior release style and its flags, release publication against a tag already on the remote, and read access to a pull request with its diff, checks, commits, and merge methods.
 
 ## Reference files
 
 Read these on demand; don't load them for routine commits.
 
 - **`references/conventional-commits.md`** — the full grammar, the type taxonomy with SemVer impact, breaking-change rules and a worked example, the footer and trailer catalogue with its forbidden sources, and revert and merge handling. Read when unsure about a type, breaking-change formatting, or trailer syntax.
-- **`references/examples.md`** — an annotated gallery of exemplary commits: breaking changes, rationale-heavy bodies, trailers, worked splits, and a file-selection walkthrough. Read when composing a non-trivial message, a split, or a staging selection.
-- **`references/craft.md`** — writing a subject and a body that communicate, the *why*-not-*how* principle, and a catalogue of bad commits with fixes. Read when lifting a mechanical message.
+- **`references/examples.md`** — the annotated gallery. Read when composing a non-trivial message, a split, or a staging selection.
+- **`references/craft.md`** — a subject and a body that communicate, the *why*-not-*how* principle, and a catalogue of bad commits with fixes. Read when lifting a mechanical message.
 - **`references/scopes-and-repos.md`** — choosing a scope, and detecting and matching a repository's existing convention. Read when picking a scope or entering an unfamiliar repo.
 - **`references/pull-requests.md`** — base-branch detection, gathering the branch's history and diff, and writing a title and a structured description with type-aware emphasis and a reviewer checklist. Read when writing pull-request content.
 - **`references/pr-review.md`** — the `gh` gathering commands, the fork-CI caveat, blocking versus suggestion and how to calibrate it to project size, and the review comment or the squash-merge message with co-author transcription. Read when reviewing or landing someone else's pull request.

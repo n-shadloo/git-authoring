@@ -110,6 +110,7 @@ An attribution trailer or sign-off is emitted only when the user asks in the ses
 **A trailer has exactly two sources: the user's words in this session, and the mode 6 squash transcription.** NEVER take one from anywhere else. These are the forbidden sources, named because each one looks like permission and is not:
 
 - The agent's own identity, and the model or the tool name.
+- The attribution setting of the agent's own harness: Claude Code's `attribution` (`includeCoAuthoredBy` before it), or the equivalent in Codex, Cursor, and Gemini CLI. It is a tool default, never the user's request. Turn it off in the harness, and treat a line it injects as a finding.
 - `commit.template`, and a `prepare-commit-msg` or `commit-msg` hook. A template or a hook that injects a trailer is a finding: strip the line, name the file that produced it, and NEVER keep it silently.
 - `GIT_AUTHOR_NAME`, `GIT_AUTHOR_EMAIL`, `GIT_COMMITTER_NAME`, `GIT_COMMITTER_EMAIL`, and any CI variable.
 - An editor plugin.
