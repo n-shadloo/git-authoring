@@ -27,7 +27,6 @@ compatibility: >-
   git alone.
 metadata:
   author: n-shadloo
-  version: "2.5.1"
 allowed-tools: Bash(git:*) Bash(gh:*) Read
 ---
 
