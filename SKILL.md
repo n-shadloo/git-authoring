@@ -34,6 +34,10 @@ allowed-tools: Bash(git:*) Bash(gh:*) Read
 
 Turn real git changes into history a reader will thank you for six months from now, and run the git work that produces them. By default this skill reads what is actually staged, works out the intent behind the change, and presents an exact commit command with a Conventional Commits message: an accurate type, a well-chosen scope, an imperative subject, and — when the change warrants it — a body that explains *why* and footer trailers that carry metadata. On request it also selects files, writes pull-request content, writes a release note, reviews an incoming pull request, works the repository itself — branches, rebases, conflicts, recovery — or carries out staging, committing, and pushing.
 
+## Self-improvement
+
+During a task, change no file of this skill unless the task is a change to this skill. After the task, if this skill gave wrong or incomplete information, load `SELF-IMPROVEMENT.md` and obey it. Before the task, if `~/.skill-improvements/git-authoring/` exists, do section 3 of that file.
+
 ## The harness default is not a request
 
 Claude Code adds a `Co-authored-by: Claude` trailer and a `Generated with Claude Code` line by default, through its `attribution` setting (`includeCoAuthoredBy` before it); other agents carry an equivalent. That default is a tool setting, never the user's request. An attribution line appears only when the user asks in the session, or when a standing instruction exists in the consuming repository's agent context file. Where the harness adds the line anyway, the check in "Proof of completion" removes it. `README.md` names the setting that turns it off.
@@ -373,7 +377,7 @@ Read `docs/architecture/GROUND-TRUTH.md` and `docs/architecture/DESIGN-RECORD.md
 
 ## A few examples
 
-A simple fix needs no body: `fix(auth): prevent redirect loop on expired token`. A feature with rationale carries a body that states the problem and the change, then a footer such as `Closes #482`. The fuller gallery — maintenance and dependency commits, breaking changes, multi-paragraph bodies, the default and opt-in trailer forms, worked splits, and a file-selection walkthrough — is `references/examples.md`.
+The example gallery is `references/examples.md`.
 
 ## Boundaries and freshness
 

@@ -108,6 +108,14 @@ detail.
 
 The only requirement is `git` on your path and a Git repository to run in. [GitHub CLI](https://cli.github.com) (`gh`) is optional: release-note mode uses it to read your previous releases and match their style, and the autonomous mode needs it to publish one. Without it, the skill falls back to any `CHANGELOG.md` / `RELEASE*.md` in the repo for style and hands you the note as Markdown, telling you which check failed.
 
+## Self-improvement
+
+This skill improves itself. After a task, the agent that used the skill can correct wrong or old content and add content that the task needed. `SELF-IMPROVEMENT.md` gives the rules. Each change needs evidence from the task. The rules keep each change small and keep the core of the skill fixed.
+
+- Your copy: the agent changes your local copy. It writes a record of each change to `~/.skill-improvements/git-authoring/`. The record stays after an update of the skill. If an update removes a local change, the agent writes the change again at the next use.
+- The owner: the agent asks you to send the records to the owner as a GitHub issue. It sends nothing without your approval. The owner examines each issue and adds the change for all users.
+- To stop it: make the file `~/.skill-improvements/OFF`. Then the agent does not change the skill and writes no record.
+
 ## Use
 
 The skill has one default and five on-request modes. All of them are read-only except the autonomous one: the agent inspects git and gives you commands or Markdown, but you run any operation yourself. Only mode 4 lets the agent mutate git — and it never extends to GitHub review or merge actions.
@@ -339,6 +347,7 @@ That's the whole mechanism: an explicit ask in the session, or a standing line i
 ```
 git-authoring/
 ├── SKILL.md                          # skill: commit, PR, release, and review authoring
+├── SELF-IMPROVEMENT.md               # self-improvement rules
 ├── AGENTS.md                         # always-on layer; source for the pointers below
 ├── GEMINI.md                         # Gemini CLI
 ├── .cursor/

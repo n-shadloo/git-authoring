@@ -4,6 +4,14 @@ Commit-message and pull-request conventions for this repository. Applies to any 
 
 By default, turn staged changes into a commit command a reader will thank you for six months from now: read what is actually staged, work out the intent behind the change, and present an exact quoted-heredoc command containing a Conventional Commits message with an accurate type, a well-chosen scope, an imperative subject, and — when the change warrants it — a body that explains *why* plus footer trailers that carry metadata. When asked, also choose which unstaged files belong together and present staging plus commit commands, write complete pull-request content, write the release note for a version, review an incoming pull request and hand the maintainer the text to paste, work the repository itself — branches, rebases, conflicts, recovery — or carry out staging, committing, and pushing. Getting the shape right (`type(scope): subject`) is table stakes. The value is in choosing the right type, writing a subject that says what changed, and recording the reasoning the diff itself can't show.
 
+## Self-improvement
+
+This skill improves itself after a task. `SELF-IMPROVEMENT.md` gives the rules.
+
+1. Before the main task: if the directory `~/.skill-improvements/git-authoring/` exists, do section 3 of `SELF-IMPROVEMENT.md`.
+2. During the main task: change no file of this skill, unless the main task is a change to this skill. When this skill gives wrong, old, unclear, or incomplete information, add one item to your task list: "Skill review: git-authoring".
+3. After the main task: if you found a defect in this skill, load `SELF-IMPROVEMENT.md` and obey it.
+
 ## Usage modes
 
 Choose exactly one mode from the user's request.
