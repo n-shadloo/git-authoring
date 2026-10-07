@@ -13,6 +13,7 @@ jobs:
       - name: Check reference links, orphans, fences, and SKILL.md size
         run: |
           python - <<'PY'
+          import hashlib
           import re
           import sys
           from pathlib import Path
@@ -69,6 +70,30 @@ jobs:
                   f"{SKILL.as_posix()}: {size} bytes, exceeds the {SIZE_LIMIT}-byte limit "
                   f"by {size - SIZE_LIMIT}"
               )
+
+          # 5. The self-improvement rule that the twelve skills share is intact.
+          SECTION_0_SHA256 = "5e785008851e26e8530d487d011fe6c4260414c24874918a262ca1ca37cf6658"
+          SHARED_RULE = (
+              "If this skill's text or script caused a mistake, or you had to find a "
+              "step yourself, record it at once. Before you claim the task is done, "
+              "end the report with `Skill defects:`. Section 0 of "
+              "`SELF-IMPROVEMENT.md` gives the rules. If "
+              "`~/.skill-improvements/{name}/` exists, do section 3 first."
+          )
+          with open("SELF-IMPROVEMENT.md", encoding="utf-8") as fh:
+              section_0 = fh.read().partition("\n## 0. ")[2].partition("\n## 1. ")[0]
+          if hashlib.sha256(section_0.encode("utf-8")).hexdigest() != SECTION_0_SHA256:
+              errors.append(
+                  "SELF-IMPROVEMENT.md: section 0 differs from the text that the twelve "
+                  "skills share. Change it in all twelve, then update the hash here."
+              )
+          with open("SKILL.md", encoding="utf-8") as fh:
+              skill_name = re.search(r"^name:\s*(\S+)", fh.read(), re.M).group(1)
+          for entry in ("SKILL.md", "AGENTS.md", "GEMINI.md", f".cursor/rules/{skill_name}.mdc"):
+              with open(entry, encoding="utf-8") as fh:
+                  entry_text = " ".join(fh.read().split())
+              if entry_text.count(SHARED_RULE.format(name=skill_name)) != 1:
+                  errors.append(f"{entry}: lacks the self-improvement rule, word for word")
 
           if errors:
               for error in errors:
