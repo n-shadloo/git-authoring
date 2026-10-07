@@ -36,7 +36,7 @@ Turn real git changes into history a reader will thank you for six months from n
 
 ## Self-improvement
 
-During a task, change no file of this skill unless the task is a change to this skill. After the task, if this skill gave wrong or incomplete information, load `SELF-IMPROVEMENT.md` and obey it. Before the task, if `~/.skill-improvements/git-authoring/` exists, do section 3 of that file.
+If this skill's text or script caused a mistake, or you had to find a step yourself, record it at once. Before you claim the task is done, end the report with `Skill defects:`. Section 0 of `SELF-IMPROVEMENT.md` gives the rules. If `~/.skill-improvements/git-authoring/` exists, do section 3 first.
 
 ## The harness default is not a request
 

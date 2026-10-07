@@ -84,14 +84,9 @@ metadata, because the squash collapses every commit into one and would otherwise
 authorship that already exists. Transcription is not inference — every name and address
 comes from an actual commit.
 
-This skill improves itself after a task. `SELF-IMPROVEMENT.md` gives the rules.
-
-- Before the main task: if the directory `~/.skill-improvements/git-authoring/` exists, do
-  section 3 of `SELF-IMPROVEMENT.md`.
-- During the main task: change no file of this skill, unless the main task is a change to
-  this skill. When this skill gives wrong, old, unclear, or incomplete information, add
-  one item to your task list: "Skill review: git-authoring".
-- After the main task: if you found a defect in this skill, load `SELF-IMPROVEMENT.md` and
-  obey it.
+If this skill's text or script caused a mistake, or you had to find a step yourself,
+record it at once. Before you claim the task is done, end the report with
+`Skill defects:`. Section 0 of `SELF-IMPROVEMENT.md` gives the rules. If
+`~/.skill-improvements/git-authoring/` exists, do section 3 first.
 
 See `AGENTS.md` for the complete workflow and `references/` for deeper guidance.

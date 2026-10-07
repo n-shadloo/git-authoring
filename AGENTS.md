@@ -6,11 +6,7 @@ By default, turn staged changes into a commit command a reader will thank you fo
 
 ## Self-improvement
 
-This skill improves itself after a task. `SELF-IMPROVEMENT.md` gives the rules.
-
-1. Before the main task: if the directory `~/.skill-improvements/git-authoring/` exists, do section 3 of `SELF-IMPROVEMENT.md`.
-2. During the main task: change no file of this skill, unless the main task is a change to this skill. When this skill gives wrong, old, unclear, or incomplete information, add one item to your task list: "Skill review: git-authoring".
-3. After the main task: if you found a defect in this skill, load `SELF-IMPROVEMENT.md` and obey it.
+If this skill's text or script caused a mistake, or you had to find a step yourself, record it at once. Before you claim the task is done, end the report with `Skill defects:`. Section 0 of `SELF-IMPROVEMENT.md` gives the rules. If `~/.skill-improvements/git-authoring/` exists, do section 3 first.
 
 ## Usage modes
 
