@@ -19,9 +19,9 @@ It defaults to Conventional Commits (imperative subject, `type(scope): …`, bre
 - On request, chooses which unstaged files belong together as one coherent commit and gives you the exact staging and commit commands.
 - On request, writes a complete pull-request title and description — summary, what changed, testing, breaking changes — from the branch's diff against its base.
 - On request, writes the release note for a version from the real range since the last release, in the style your project's previous releases already use.
-- On request, reviews an incoming pull request with you — reads its diff, checks, and existing comments, separates what actually blocks a merge from what's only a suggestion, and hands you the review comment or the squash-merge message to paste.
+- On request, reviews an incoming pull request with you — reads its diff, checks, and existing comments, separates what actually blocks a merge from what's only a suggestion, and hands you the review comment or the squash-merge message — or, when you ask, submits the review or merges the pull request itself.
 - On request, works the repository itself — branching, merging and rebasing, squashing and splitting commits, cherry-picking, reverting and resetting, stashing, worktrees, resolving merge conflicts, and recovering lost work through the reflog — by reading the real state and giving you the exact commands.
-- Keeps every mode except the autonomous one read-only: it never stages, commits, pushes, opens a PR, tags, publishes a release, or approves, rejects, or merges a pull request.
+- Keeps every mode except the autonomous one read-only by default, and carries out any git or pull-request action the user asks for: staging, committing, pushing, opening a PR, merging it once its checks pass, submitting a review, tagging, or publishing a release.
 - Adds no attribution trailers in any mode unless you ask for them — see [Attribution and trailers](#attribution-and-trailers).
 - Runs staging, committing, and pushing itself only when you explicitly ask for the autonomous mode — and tags and publishes a release only on a further explicit ask.
 
@@ -119,7 +119,7 @@ This skill improves itself. After a task, the agent that used the skill can corr
 
 ## Use
 
-The skill has one default and five on-request modes. All of them are read-only except the autonomous one: the agent inspects git and gives you commands or Markdown, but you run any operation yourself. Only mode 4 lets the agent mutate git — and it never extends to GitHub review or merge actions.
+The skill has one default and five on-request modes. All of them are read-only except the autonomous one: the agent inspects git and gives you commands or Markdown, but you run any operation yourself. Only mode 4 lets the agent mutate git and GitHub, and it carries out exactly the actions you ask for: a commit and a push, opening a pull request, merging one, or submitting a review.
 
 ### 1. Get a commit command for staged changes — the default
 
@@ -172,7 +172,7 @@ When the branch is ready to open, ask for PR content explicitly:
 > write a PR title and description for this branch
 ```
 
-It detects the base branch (main/master), reads the branch's commits and its diff against that base, and writes a complete PR as plain Markdown: a strong title and a description with a summary, what changed, testing, and any breaking changes — plus a reviewer/testing checklist where it helps. It verifies what it can from the history and diff, and never opens the PR for you: you get the Markdown to paste, or a `gh pr create …` command to run yourself.
+It detects the base branch (main/master), reads the branch's commits and its diff against that base, and writes a complete PR as plain Markdown: a strong title and a description with a summary, what changed, testing, and any breaking changes — plus a reviewer/testing checklist where it helps. It verifies what it can from the history and diff, and by default you get the Markdown to paste, or a `gh pr create …` command. Ask it to open the PR — and to merge it once CI passes — and it does both itself, with no bypass of a failing check or of branch protection unless you ask for that too.
 
 ### 4. Ask it to stage, commit, and push — explicit autonomous mode
 
@@ -184,7 +184,7 @@ Use unambiguous wording when you want the agent to perform the operations itself
 
 The agent inspects the staged and unstaged hunks, selects one coherent change, stages only its specific paths, verifies the staged diff, commits with the quoted-heredoc form, and pushes the current branch to its upstream. It never uses `git add -A` and it never force-pushes. It never passes `--no-verify` either: a hook that fails is a finding it reports, not an obstacle it removes. It treats work in the repository it did not create as yours — it inspects that work, never sweeps it into a commit, and never rewrites it.
 
-Five conditions stop it: a rejected push, an ambiguous remote or upstream, staged work that will not group into one commit, a tag or release that already exists, and a hook that fails. A rejected push means someone else moved the branch. The agent fetches, reads the divergence, and reports the exact commits on each side. It never rebases or merges that divergence for you.
+Six conditions stop it: a rejected push, an ambiguous remote or upstream, staged work that will not group into one commit, a tag or release that already exists, a hook that fails, and a pull request whose checks fail or that cannot merge. A rejected push means someone else moved the branch. The agent fetches, reads the divergence, and reports the exact commits on each side. It never rebases or merges that divergence for you.
 
 Every stop hands the work back with the same five things. The goal, and the exact blocked step. What it attempted, and the git output, verbatim. The causes it eliminated, and how. The one decision it needs from you. The state that remains, and whether it is safe to leave.
 
@@ -246,7 +246,7 @@ Then you decide, and it writes exactly one Markdown block for the decision you m
 - **Something blocks it** — a review comment, verdict first, blocking items separated from optional ones, pointing at code and locations rather than at the contributor.
 - **You're accepting** — the merge-commit message. On a squash merge this matters more than it looks: GitHub prefills the body with every branch commit concatenated together, and that's the commit that lands on your default branch and lives in `git log` forever. It gets written fresh from the diff instead, and `Co-authored-by:` lines are carried across from the branch's real commits so a squash doesn't erase a second contributor's credit.
 
-You paste it into GitHub and click the button. The agent never approves, requests changes, comments, or merges — and "approve it" or "yes, merge" tells it what the block should say, not to run it. The autonomous mode doesn't extend here: mode 4 stages, commits, and pushes *your* work, never lands someone else's.
+By default you paste it into GitHub and click the button. Say "approve it", "request changes", "post the comment", or "merge it", and the agent carries out that action itself; it merges only while the required checks pass. A bare "go ahead" names no action, so it asks which one you mean.
 
 ### 7. Ask it about the repository itself — on request
 

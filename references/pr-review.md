@@ -120,8 +120,8 @@ The branch commits were `add throttle`, `fix test`, and `address review`. None o
 
 ## Hard limits
 
-- **Never run a write verb.** Not `gh pr review`, `gh pr comment`, `gh pr merge`, `gh pr close`, `gh pr edit`, `gh pr ready`, or any `gh api` call with a method other than GET.
-- **A confirmation is about the text, not about execution.** "Approve it", "go ahead", "yes, merge" tell you what the block should say. They are never permission to carry it out, and no autonomous request extends to this mode — mode 4 covers staging, committing, and pushing your own work, never merging someone else's.
+- **Run a write verb only for the action the user names.** "Approve it", "request changes", "post the comment", and "merge it" are requests to act: run `gh pr review <number> --approve`, `--request-changes`, or `--comment` with `--body-file`, or `gh pr merge <number>` with the repository's merge method and the message you wrote. Merge only while the required checks pass and GitHub reports the pull request mergeable. Never run `gh pr close`, `gh pr edit`, `gh pr ready`, `--admin`, `--auto`, or any other write the user did not name.
+- **A bare "go ahead" names no action.** Ask whether they mean the review, the comment, or the merge.
 - **One block at a time**, for the decision actually made. Do not produce a review comment and a merge message together on the chance one is wanted.
-- **Confirm before producing any block**, and state plainly at the end that the user runs the action themselves.
+- **Confirm before producing any block**, and say at the end whether you carried the action out or the user runs it.
 - **Never assert a check passed that you did not see pass.**

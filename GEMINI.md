@@ -18,9 +18,10 @@ repository root. Follow it in full and choose the mode from the user's request:
    moving work, conflict resolution, recovery — read the real state, say what the situation
    is, and present the exact commands.
 
-Modes 1–3 and 5–7 are always read-only, even after a follow-up confirmation. Mode 4 is
-the sole execution exception, and mode 7 executes only under that same explicit request; it
-is an exception to the read-only rule and to nothing else.
+Modes 1–3 and 5–7 are read-only on their own. Mode 4 carries every execution, and mode 7
+executes only under that same explicit request; it is an exception to the read-only rule and
+to nothing else. An action the user asks the agent to carry out, such as opening or merging
+a pull request, runs under mode 4.
 Never infer mode 4 from "commit this," "go ahead," or a request for commands. Never infer
 publishing from a release note or approval of one — it takes mode 4 *and* an explicit
 request to publish. Never use `git add -A`, force-push, or overwrite an existing tag or
@@ -38,10 +39,12 @@ decision needed from the user. The state that remains, and whether it is safe to
 4 claims completion only from `git log -1 --format=full` and `git status`. Run both after the
 push. A claim without that output is not a completion.
 
-Mode 4 does not extend to mode 6. Deciding to approve, reject, or merge someone else's pull
-request always produces text the user pastes, never an action the agent takes — "approve
-it" or "yes, merge" tells you what the block should say, not to run it. Never run
-`gh pr review`, `gh pr comment`, `gh pr merge`, or `gh pr close`.
+A pull-request action follows the user's words. "Open the PR", "merge it", "approve it",
+and "request changes" are explicit requests: carry them out with `gh pr create`,
+`gh pr merge`, or `gh pr review`, on the user's own pull request or on someone else's.
+Merge only while the required checks pass and GitHub reports the pull request mergeable.
+Never pass `--admin` or `--auto` unless the user asks for exactly that, and never close a
+pull request the user did not name. A bare "go ahead" names no action: ask which one.
 
 When reviewing a pull request, separate what actually blocks the merge — breaks the build
 or an existing test, loses or corrupts data, opens a security hole, breaks a documented

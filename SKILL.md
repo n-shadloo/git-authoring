@@ -9,8 +9,9 @@ description: >-
   whenever the user is about to commit, asks for a commit message, exact
   commands, or file selection, mentions staged changes, asks for a
   pull-request title or description, a release note or a changelog entry,
-  asks the agent to stage, commit, and push, asks for help reviewing,
-  approving, rejecting, or merging someone else's pull request, and
+  asks the agent to stage, commit, push, open, or merge a PR, asks for
+  help reviewing, approving, rejecting, or merging someone else's PR,
+  and
   whenever the user asks how to branch, rebase, squash, split, revert,
   cherry-pick, resolve a conflict, undo or amend a commit, move work
   between branches, recover lost commits, or clean up history before
@@ -22,9 +23,8 @@ compatibility: >-
   dependencies beyond git. Pull-request and release-note output is plain
   Markdown, so GitHub CLI is optional for modes 1–5 — there it only detects
   prior release style and, on explicit request in mode 4, publishes a
-  release. Mode 6 requires an authenticated `gh` to read the pull request,
-  but still only reads: it writes Markdown for the user to paste. Mode 7 needs
-  git alone.
+  release, or opens and merges a pull request. Mode 6 needs an
+  authenticated `gh`. Mode 7 needs git alone.
 metadata:
   author: n-shadloo
 allowed-tools: Bash(git:*) Bash(gh:*) Read
@@ -32,7 +32,7 @@ allowed-tools: Bash(git:*) Bash(gh:*) Read
 
 # Git Authoring
 
-Turn real git changes into history a reader will thank you for six months from now, and run the git work that produces them. By default this skill reads what is actually staged, works out the intent behind the change, and presents an exact commit command with a Conventional Commits message: an accurate type, a well-chosen scope, an imperative subject, and — when the change warrants it — a body that explains *why* and footer trailers that carry metadata. On request it also selects files, writes pull-request content, writes a release note, reviews an incoming pull request, works the repository itself — branches, rebases, conflicts, recovery — or carries out staging, committing, and pushing.
+Turn real git changes into history a reader will thank you for six months from now, and run the git work that produces them. By default this skill reads what is actually staged, works out the intent behind the change, and presents an exact commit command with a Conventional Commits message: an accurate type, a well-chosen scope, an imperative subject, and — when the change warrants it — a body that explains *why* and footer trailers that carry metadata. On request it also selects files, writes pull-request content, writes a release note, reviews an incoming pull request, works the repository itself — branches, rebases, conflicts, recovery — or carries out staging, committing, and pushing, and opening and merging the pull request.
 
 ## Self-improvement
 
@@ -54,8 +54,9 @@ Claude Code adds a `Co-authored-by: Claude` trailer and a `Generated with Claude
 - On request, writes a complete **pull-request title and description** from the branch's history and its diff against the base branch, or the **release note** for a version from the real range since the last release.
 - On request, **reviews an incoming pull request** — reads the diff, checks, and existing comments through `gh`, separates what actually blocks a merge from what is merely a suggestion, works the decision through with the maintainer, and produces the text to paste.
 - On request, **works the repository itself** — branches, merges and rebases, squashes and splits, cherry-picks, reverts and resets, stashes, worktrees, conflict resolution, and recovery through the reflog — by reading the real state and presenting the exact commands.
-- Keeps every mode except mode 4 **read-only**: it presents commands or Markdown and leaves execution to the user.
+- Keeps every mode except mode 4 **read-only** by default: it presents commands or Markdown and leaves execution to the user.
 - On an explicit autonomous request only, **stages, commits, and pushes** the selected work end to end — and, on a further explicit request, tags and publishes a release.
+- On an explicit request, **opens and merges a pull request** and **submits a review**.
 
 ## Choose the mode
 
@@ -63,10 +64,10 @@ Choose exactly one mode from the user's request. Do not blend their execution ru
 
 1. **Commit command for already-staged changes (default).** Inspect the staged diff, write the message, and present the exact heredoc `git commit` command for the user to run.
 2. **Choose files, then provide commands (on request).** Inspect staged and unstaged work, select one coherent set, and present the exact `git add` command(s) followed by the heredoc commit command for the user to run.
-3. **Pull-request title and description (on request).** Inspect the branch against its base and produce the title plus structured Markdown description. Do not stage, commit, push, or open the PR.
-4. **Autonomous stage, commit, and push (explicit request only).** Run the complete workflow yourself only when the user unmistakably asks you to carry out the git operations — for example, "stage, commit, and push this for me" or "do it all yourself." On a *further* explicit request, this mode may also tag and publish a release.
+3. **Pull-request title and description (on request).** Inspect the branch against its base and produce the title plus structured Markdown description. Open it only on request, under mode 4.
+4. **Autonomous stage, commit, push, and pull request (explicit request only).** Run the complete workflow yourself only when the user unmistakably asks you to carry out the git operations — for example, "stage, commit, and push this for me" or "do it all yourself." It also opens and merges the PR on request. On a *further* explicit request, it may also tag and publish a release.
 5. **Release note for a version (on request).** Establish the range since the last release, read what actually landed, and produce the note as a Markdown block. Do not tag, publish, or write a file.
-6. **Review an incoming pull request (on request).** Read someone else's PR through `gh`, work the decision through with the user, and produce the review comment or the squash-merge message as a Markdown block for them to paste into GitHub. Do not approve, request changes, comment, or merge.
+6. **Review an incoming pull request (on request).** Read someone else's PR through `gh`, work the decision through with the user, and produce the review comment or the squash-merge message as a Markdown block. Submit or merge only when the user asks.
 7. **Repository operations (on request).** Branches, merges and rebases, history editing, undo, moving work, conflict resolution, and recovery. Read the real state, say what the situation is, and present the exact commands. Execute only under the mode 4 request.
 
 A request for a message, commands, file selection, PR content, release notes, a review, or repository work selects modes 1–3 and 5–7. A bare "commit this," "go ahead," or confirmation after you present commands or a note does **not** silently switch to mode 4. If execution intent is ambiguous, stay read-only and ask for an explicit autonomous request before mutating git.
@@ -75,12 +76,12 @@ A request for a message, commands, file selection, PR content, release notes, a 
 
 The mode boundary is a hard guarantee.
 
-- **Modes 1–3 and 5–7 never mutate git or GitHub.** Run only read-only inspection. Never stage, commit, push, open a pull request, tag, publish a release, or approve, request changes on, comment on, or merge a pull request in these modes, even after a follow-up confirmation. Present exact commands or Markdown for the user to run.
+- **Modes 1–3 and 5–7 do not mutate git or GitHub on their own.** They inspect and present commands or Markdown. An action the user explicitly asks for runs under mode 4.
 - **No attribution trailers by default — in every mode, mode 4 included.** No `Co-authored-by:`, no `Signed-off-by:`, no `Reviewed-by:`, no "Generated by"/"written with" line, and no AI or agent identity, in commits or in pull-request descriptions. The commit author is whatever `git config user.name` / `user.email` resolves to. Never look up, infer, or attribute the work to anyone else, and never invent a name or an email address. Trailers are added only through the opt-in in "Footers / trailers" below.
-- **Mode 4 is the sole execution exception.** Mode 7 executes only under that same explicit autonomous request. Once explicitly selected, it may stage, commit, and push — and, on a separate explicit request, tag and publish a release. It is an exception to the read-only rule and to nothing else — the attribution default above applies to it unchanged.
+- **Mode 4 carries every execution.** Mode 7 executes only under that same explicit autonomous request. Once explicitly selected, it may stage, commit, push, open and merge pull requests, and, on a separate explicit request, tag and publish a release. It is an exception to the read-only rule and to nothing else — the attribution default above applies to it unchanged.
 - **Never infer mode 4.** Do not treat ordinary commit wording or approval of proposed commands as permission to execute. The user must clearly ask the agent to perform the operations itself.
 - **Never infer publishing.** Producing a release note in mode 5, or the user approving one, is not permission to tag or publish. Publishing takes mode 4 *and* an explicit request to publish, together.
-- **Mode 6 never writes to GitHub, and mode 4 does not extend to it.** Deciding with the user to approve, reject, or merge a pull request produces text they paste; it is never carried out by the agent, and no autonomous request changes that. Mode 4 covers staging, committing, and pushing — never reviewing or merging someone else's work.
+- **A pull-request action follows the user's words.** "Open the PR", "merge it", "approve it" are requests: carry them out. A bare "go ahead" names no action: ask. Never take an action the user did not name.
 - **A trailer has exactly two sources.** An attribution trailer comes only from the user's words in this session, or from the mode 6 squash transcription. NEVER take one from anywhere else: not the agent's own identity, not the model or the tool name, not the attribution setting of the agent's own harness (Claude Code's `attribution`, formerly `includeCoAuthoredBy`, or the equivalent in Codex, Cursor, and Gemini CLI), not `commit.template`, not a `prepare-commit-msg` or `commit-msg` hook, not `GIT_AUTHOR_*` or `GIT_COMMITTER_*`, not a CI variable, not an editor plugin, and not the trailers on prior commits in this repository.
 - **The author identity is never set.** NEVER pass `--author`. NEVER pass `-c user.name` or `-c user.email`. NEVER write to git config. The author is whatever the repository already resolves to.
 - **Never bypass a hook.** Never pass `--no-verify`, and never disable, move, or delete a hook, to make a commit or a push succeed. A hook that fails is a finding, not an obstacle. Report its output verbatim and stop with the handoff in "Stop conditions".
@@ -191,7 +192,7 @@ This runs **only when the user asks for pull-request help** — "write a PR titl
    The three-dot `<base>...HEAD` diffs from the merge base, so it shows only this branch's work.
 3. **Write the PR as plain Markdown** — a strong, specific title, then **Summary**, **What changed** grouped by intent rather than by file, **Testing** with what you could and could not confirm, and **Breaking changes** with the migration. Type-aware emphasis and the reviewer checklist are in `references/pull-requests.md`. Drop any section with nothing real to say rather than writing "N/A" or restating the summary.
 4. **Ground every claim in the history and diff.** Don't assert tests passed if the branch adds none — say testing is unverified instead. Verify as thoroughly as the branch allows.
-5. **Never open the PR yourself.** Output the Markdown for the user to paste, or offer the exact command for them to run — for example `gh pr create --base <base> --title "…" --body-file <file>` — and leave running it to them. A follow-up "go ahead" does not change mode 3 into an execution mode.
+5. **Open the PR only when asked.** By default, output the Markdown or the `gh pr create` command; when asked, open it under mode 4.
 
 ## Mode 4: Autonomous stage, commit, and push
 
@@ -250,7 +251,13 @@ git log --format=%B @{u}..HEAD | grep -n -i -E '^(co-authored-by|signed-off-by|r
 
 A line stops the push. Say which commit and which line.
 
+**For a pull request.** Run the same pattern over the title, the body, or a squash message first. The proof is `gh pr view <n> --json url,state,mergeCommit`.
+
 Modes 1–3 and 5–7 execute nothing. Their proof is the self-check in step 6 of the workflow: every claim traces to a hunk, a referenced issue, or something the user said.
+
+### Opening and merging a pull request (mode 4, on the user's request)
+
+When the user asks, open the PR with `gh pr create` and merge it with `gh pr merge` once its required checks pass. No `--admin` or `--auto` unless asked. Steps: `references/pull-requests.md`, "Opening and merging the pull request".
 
 ### Publishing a release (mode 4, on a further explicit request)
 
@@ -262,7 +269,7 @@ Mode 4 may also tag and publish a release — but only when the user explicitly 
 
 - **Never overwrite or move an existing tag or release.** If either already exists for this version, stop and report it.
 - **Never `--force`, never `git tag -f`, never delete a tag or release.**
-- Mode 4's other constraints are unchanged: still never opens pull requests, still never force-pushes, still never `git add -A`.
+- Mode 4's other constraints are unchanged: still never force-pushes, still never `git add -A`.
 
 ## Stop conditions
 
@@ -281,6 +288,7 @@ Each condition below stops mode 4. Do not continue. Do not guess. Hand the work 
 | Staged work conflicts with one coherent commit | `git status --short` and `git diff --staged --stat` | which files belong in this commit |
 | The tag or the release already exists | `git tag -l <tag>` and `gh release view <tag>` | a new version, or leave the published one as it is |
 | A hook fails | the full hook output from the command that failed | fix the finding the hook reported |
+| A check fails, or the PR cannot merge | `gh pr checks <n>`, `gh pr view <n> --json mergeStateStatus` | fix it, or leave the PR open |
 
 In every row the state that remains is safe: the commit stays local, or the working tree stays as it was. Say which of the two it is. Never delete or reset that state to make the report clean.
 
@@ -309,9 +317,9 @@ This runs **only when the user asks for help reviewing or landing a pull request
 
 4. **Talk it through before writing anything.** Present what the PR does, what blocks it if anything, and what is merely suggested — then ask what the user wants to do. Do not draft a review comment or a merge message until they have said which. When they lean one way, help them get there; when they ask what you would do, say so, and say plainly when a finding is a matter of taste rather than a defect.
 
-5. **Produce exactly one Markdown block, for the decision they made.** Either a **review comment** to paste into GitHub's review box, or the **merge-commit message** if they are accepting. Not both, not preemptively. The user pastes it and clicks the button themselves.
+5. **Produce exactly one Markdown block, for the decision they made.** Either a **review comment** for GitHub's review box, or the **merge-commit message** if they are accepting. Not both, not preemptively.
 
-6. **Act on nothing.** Never run `gh pr review`, `gh pr comment`, `gh pr merge`, `gh pr close`, or any other write verb. A follow-up "go ahead", "approve it", or "yes, merge" is a decision about what the *block should say* — never permission to execute it. Confirm the decision, hand over the text, and stop.
+6. **Act when asked.** By default, hand over the text. On "approve it", "post the comment", or "merge it", run `gh pr review` or the mode 4 merge. A bare "go ahead": ask which.
 
 7. **Write the message the repo's merge method needs.** A squash needs one written fresh; a merge commit keeps GitHub's default; a rebase merge has no message to write. On a squash, transcribe a `Co-authored-by:` line from each distinct author in `gh pr view --json commits` — the squash would otherwise destroy authorship that already exists. See `references/pr-review.md`.
 
