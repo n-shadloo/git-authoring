@@ -89,7 +89,7 @@ jobs:
               )
           with open("SKILL.md", encoding="utf-8") as fh:
               skill_name = re.search(r"^name:\s*(\S+)", fh.read(), re.M).group(1)
-          for entry in ("SKILL.md", "AGENTS.md", "GEMINI.md", f".cursor/rules/{skill_name}.mdc"):
+          for entry in ("SKILL.md", "AGENTS.md", "GEMINI.md"):
               with open(entry, encoding="utf-8") as fh:
                   entry_text = " ".join(fh.read().split())
               if entry_text.count(SHARED_RULE.format(name=skill_name)) != 1:

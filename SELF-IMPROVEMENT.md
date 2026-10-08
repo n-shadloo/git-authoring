@@ -54,9 +54,8 @@ Before the final report, before you open a pull request, and before each claim t
   - The nine reference files in `references/`.
 - Router: `SKILL.md`, heading "Reference files": one bullet for each reference file, in the form ``- **`references/<file>.md`** — <what it holds>. Read when <condition>.``
 - Mirrors: each mirror repeats content of `SKILL.md` in its own style. No script renders a mirror.
-  - `AGENTS.md`: the full content of `SKILL.md`, in a longer form. `GEMINI.md` and the Cursor rule point to it.
+  - `AGENTS.md`: the full content of `SKILL.md`, in a longer form. `GEMINI.md` points to it.
   - `GEMINI.md`: the seven modes as a numbered list, then the hard rules as prose with no second-level heading.
-  - `.cursor/rules/git-authoring.mdc`: its own `description` in the frontmatter, and the hard rules as a list.
   - The attribution check (the `git log -1 --format=%B | grep ...` command) has the same text in `SKILL.md` and in each mirror.
   - After a change to a rule that a mirror repeats, make the same change in each mirror, in its own style, in the same commit.
 - Shared files: `LICENSE` has the same bytes as the license file in other skill repositories of the owner.

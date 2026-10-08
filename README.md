@@ -93,8 +93,7 @@ git clone https://github.com/n-shadloo/git-authoring.git \
   .cursor/skills/git-authoring
 ```
 
-Cursor additionally reads `AGENTS.md` at the repository root and the bundled
-`.cursor/rules/git-authoring.mdc` rule, which reinforces the same guidance.
+Cursor additionally reads `AGENTS.md` at the repository root.
 
 ### Gemini CLI
 
@@ -351,9 +350,6 @@ git-authoring/
 ├── SELF-IMPROVEMENT.md               # self-improvement rules
 ├── AGENTS.md                         # always-on layer; source for the pointers below
 ├── GEMINI.md                         # Gemini CLI
-├── .cursor/
-│   └── rules/
-│       └── git-authoring.mdc         # Cursor rule (points to AGENTS.md)
 ├── references/
 │   ├── conventional-commits.md       # full grammar, types, trailers
 │   ├── examples.md                   # worked commits, incl. splits and staging
