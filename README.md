@@ -1,5 +1,7 @@
 # git-authoring
 
+[![AgentShield Security](https://merx.help/badge/A+.svg)](https://merx.help/shield)
+
 A full git skill for AI coding agents — built for Claude, and portable to Codex, Cursor, and Gemini CLI. It has seven request-selected modes: generate an exact commit command for staged changes; choose one coherent set of files and generate staging plus commit commands; write a pull-request title and description; stage, commit, and push autonomously when explicitly told to do it all; write the release note for a version from what actually landed since the last release; review an incoming pull request and hand you the review comment or the squash-merge message to paste; or work the repository itself — branches, rebases, squashes, cherry-picks, reverts, conflicts, stashes, and recovery through the reflog.
 
 [![Security: A — Skills Directory](https://www.skillsdirectory.com/api/skills/n-shadloo-git-authoring/badge)](https://www.skillsdirectory.com/skills/n-shadloo-git-authoring)
